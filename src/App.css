@@ -1,0 +1,254 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.App {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.contenedor-contador {
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 50px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.contenedor-contador:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.titulo {
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, #4a6fa5, #166088);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.contador {
+  font-size: 9rem;
+  font-weight: 900;
+  color: #4a6fa5;
+  margin: 50px 0;
+  text-shadow: 4px 4px 0 rgba(74, 111, 165, 0.1);
+  font-family: 'Courier New', monospace;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+  padding: 0 20px;
+}
+
+.contador::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 10%;
+  width: 80%;
+  height: 5px;
+  background: linear-gradient(90deg, transparent, #4a6fa5, transparent);
+  border-radius: 5px;
+}
+
+.contador:hover {
+  transform: scale(1.05);
+  color: #166088;
+}
+
+.descripcion {
+  color: #666;
+  font-size: 1.3rem;
+  margin-bottom: 40px;
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.controles {
+  margin: 40px 0;
+}
+
+.boton-reiniciar {
+  background: linear-gradient(135deg, #4a6fa5 0%, #166088 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 18px 50px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(74, 111, 165, 0.3);
+  letter-spacing: 1px;
+}
+
+.boton-reiniciar:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(74, 111, 165, 0.5);
+  background: linear-gradient(135deg, #166088 0%, #4a6fa5 100%);
+}
+
+.boton-reiniciar:active {
+  transform: translateY(-2px);
+}
+
+.boton-reiniciar:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.3);
+}
+
+.info {
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  color: #777;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.info p {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.info p::before {
+  content: '⏱️';
+  font-size: 1.2rem;
+}
+
+.info p:nth-child(2)::before {
+  content: '🕒';
+}
+
+.info p:nth-child(3)::before {
+  content: '🚀';
+}
+
+/* Animación sutil para el contador */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.contador {
+  animation: pulse 2s infinite;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .contenedor-contador {
+    padding: 40px 25px;
+  }
+  
+  .titulo {
+    font-size: 2.2rem;
+  }
+  
+  .contador {
+    font-size: 7rem;
+    margin: 40px 0;
+  }
+  
+  .descripcion {
+    font-size: 1.1rem;
+  }
+  
+  .boton-reiniciar {
+    padding: 16px 40px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 15px;
+  }
+  
+  .contenedor-contador {
+    padding: 30px 20px;
+    border-radius: 15px;
+  }
+  
+  .titulo {
+    font-size: 1.8rem;
+  }
+  
+  .contador {
+    font-size: 5rem;
+    margin: 30px 0;
+  }
+  
+  .descripcion {
+    font-size: 1rem;
+  }
+  
+  .boton-reiniciar {
+    padding: 14px 35px;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 250px;
+  }
+  
+  .info {
+    font-size: 0.9rem;
+  }
+}
+
+/* Efecto de partículas de fondo */
+.fondo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.particula {
+  position: absolute;
+  background-color: rgba(74, 111, 165, 0.1);
+  border-radius: 50%;
+  animation: flotar 15s infinite linear;
+}
+
+@keyframes flotar {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
