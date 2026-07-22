@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'http://192.168.80.238:3000/api';
+export const API_BASE_URL = 'https://kinder-swim.odooerp.one/api';
