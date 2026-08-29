@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { studentService } from '../../services/api';
+import { studentService, extractList, extractPagination } from '../../services/api';
+
+
+const STUDENTS_PAGE_SIZE = 20;
 
 export default function StudentsCRUD() {
   const [confirmModal, setConfirmModal] = useState({ 
@@ -8,6 +11,13 @@ export default function StudentsCRUD() {
   tipo: 'baja'
 });
   const [students, setStudents] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: STUDENTS_PAGE_SIZE,
+    total: 0,
+    pages: 1,
+    hasMore: false
+  });
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ 
     nombre: '', 
@@ -21,7 +31,8 @@ export default function StudentsCRUD() {
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-    fetchStudents();
+    fetchStudents(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
      const [alert, setAlert] = useState({
@@ -48,11 +59,16 @@ export default function StudentsCRUD() {
 };
 
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (page = pagination.page, pageSize = pagination.pageSize) => {
     try {
       setLoading(true);
-      const response = await studentService.getAll();
-      setStudents(response.data);
+      const response = await studentService.getAll({ page, pageSize });
+      const list = extractList(response.data, 'students');
+      setStudents(list);
+      setPagination({
+        ...extractPagination(response.data, list.length),
+        pageSize
+      });
     } catch (error) {
       console.error('Error al cargar estudiantes:', error);
       showAlert('Error al cargar estudiantes: ' + (error.response?.data?.error || error.message));
@@ -61,10 +77,13 @@ export default function StudentsCRUD() {
     }
   };
 
-  
+  const goToPage = (page) => {
+    const nextPage = Math.max(1, Math.min(page, pagination.pages || 1));
+    fetchStudents(nextPage, pagination.pageSize);
+  };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Está seguro de eliminar este estudiante?')) return;
+    if (!window.confirm('Ãƒâ€šÃ‚Â¿EstÃƒÆ’Ã‚Â¡ seguro de eliminar este estudiante?')) return;
     
     try {
       await studentService.delete(id);
@@ -79,29 +98,6 @@ export default function StudentsCRUD() {
 // En StudentsCRUD.jsx
 const handleBajaTotal = (student) => {
   setConfirmModal({ show: true, student: student, tipo: 'baja' });
-};
-
-// Esta es la función que REALMENTE hace el trabajo cuando el usuario da click en "Sí, confirmar"
-const confirmDeactivation = async () => {
-  const student = confirmModal.student;
-  try {
-    setLoading(true);
-    // Limpiamos datos para evitar el error 500 que tenías antes
-    const { _count, createdAt, updatedAt, slots, programas, ...datosLimpios } = student;
-    
-    await studentService.update(student.id, { 
-      ...datosLimpios,
-      activo: false 
-    });
-    
-    setConfirmModal({ show: false, student: null }); // Cerramos modal
-    fetchStudents(); 
-    showAlert(`Se ha dado de baja a ${student.nombre} y se limpió su agenda`, 'success');
-  } catch (error) {
-    showAlert('Error al procesar la baja', 'error');
-  } finally {
-    setLoading(false);
-  }
 };
 
 const handleReactivar = (student) => {
@@ -119,7 +115,7 @@ const handleConfirmAction = async () => {
   try {
     setLoading(true);
     
-    // Mantenemos tu lógica de limpieza exacta
+    // Mantenemos tu lÃƒÆ’Ã‚Â³gica de limpieza exacta
     const { _count, createdAt, updatedAt, slots, programas, ...datosLimpios } = student;
     
     // Determinamos el nuevo estado: si el tipo es 'reactivar' mandamos true
@@ -130,9 +126,9 @@ const handleConfirmAction = async () => {
       activo: nuevoEstado 
     });
     
-    // Éxito
+    // ÃƒÆ’Ã¢â‚¬Â°xito
     setConfirmModal({ show: false, student: null, tipo: 'baja' });
-    fetchStudents(); // Recarga la lista igual que antes
+    fetchStudents(pagination.page); // Recarga la lista igual que antes
     
     const mensajeOk = tipo === 'reactivar' 
       ? 'Alumno reactivado correctamente' 
@@ -174,8 +170,8 @@ const handleConfirmAction = async () => {
         setStudents(students.map(s => s.id === editingId ? response.data : s));
         showAlert('Estudiante actualizado');
       } else {
-        const response = await studentService.create(dataToSend);
-        setStudents([...students, response.data]);
+        await studentService.create(dataToSend);
+        fetchStudents(1);
         showAlert('Estudiante creado');
       }
       
@@ -201,22 +197,22 @@ const handleConfirmAction = async () => {
 
   return (
     <div className="bg-white rounded-xl shadow-lg border">
-      <div className="p-6 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
+      <div className="p-6 border-b bg-gradient-to-r from-sky-50 via-cyan-50 to-emerald-50">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Gestión de Estudiantes</h2>
-            <p className="text-gray-600">Administra los alumnos del sistema</p>
+            <h2 className="text-xl font-bold text-gray-900">Alumnos</h2>
+            <p className="text-gray-600">Alta y administracion de alumnos por sucursal</p>
           </div>
           <div className="flex gap-2">
             <button 
               onClick={() => setShowForm(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              className="bg-cyan-700 hover:bg-cyan-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium shadow-sm"
             >
               <span className="material-icons">person_add</span>
-              Nuevo Estudiante
+              Nuevo alumno
             </button>
             <button 
-              onClick={fetchStudents}
+              onClick={() => fetchStudents(pagination.page)}
               className="bg-white border text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <span className="material-icons">refresh</span>
@@ -226,113 +222,157 @@ const handleConfirmAction = async () => {
         </div>
       </div>
 
+      {alert.message && (
+        <div
+          className={`mx-6 mt-4 rounded-lg border px-4 py-3 text-sm ${
+            alert.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : alert.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-800'
+                : 'bg-blue-50 border-blue-200 text-blue-800'
+          }`}
+        >
+          {alert.message}
+        </div>
+      )}
+
       {showForm && (
-        <div className="p-6 border-b bg-gray-50">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium">
-              {editingId ? 'Editar Estudiante' : 'Nuevo Estudiante'}
-            </h3>
-            <button onClick={resetForm} className="text-gray-500 hover:text-gray-700">
+        <div className="p-6 border-b bg-slate-50">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">
+                {editingId ? 'Editar registro' : 'Alta de alumno'}
+              </p>
+              <h3 className="text-lg font-bold text-gray-900">
+                {editingId ? 'Actualizar datos del alumno' : 'Registrar nuevo alumno'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                Captura solo datos operativos. Los datos fiscales se solicitan aparte si el cliente los necesita.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-full p-2 text-gray-500 hover:bg-white hover:text-gray-800"
+              aria-label="Cerrar formulario"
+            >
               <span className="material-icons">close</span>
             </button>
           </div>
-          
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre completo *
-              </label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                placeholder="Ej: Juan Pérez"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Edad
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="99"
-                value={formData.edad}
-                onChange={(e) => setFormData({...formData, edad: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                placeholder="Ej: 12"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Teléfono de contacto
-              </label>
-              <input
-                type="tel"
-                value={formData.telefonoContacto}
-                onChange={(e) => setFormData({...formData, telefonoContacto: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                placeholder="Ej: 555-1234"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre del tutor
-              </label>
-              <input
-                type="text"
-                value={formData.nombreTutor}
-                onChange={(e) => setFormData({...formData, nombreTutor: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                placeholder="Ej: María García"
-              />
-            </div>
-            
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notas
-              </label>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <section className="rounded-lg border bg-white p-4">
+              <div className="mb-4 flex items-center gap-2 text-cyan-800">
+                <span className="material-icons">school</span>
+                <h4 className="font-semibold text-gray-900">Datos del alumno</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre completo *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    placeholder="Nombre y apellidos del alumno"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Edad
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={formData.edad}
+                    onChange={(e) => setFormData({...formData, edad: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    placeholder="Ej. 6"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-lg border bg-white p-4">
+              <div className="mb-4 flex items-center gap-2 text-cyan-800">
+                <span className="material-icons">contact_phone</span>
+                <h4 className="font-semibold text-gray-900">Contacto principal</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre del tutor
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nombreTutor}
+                    onChange={(e) => setFormData({...formData, nombreTutor: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    placeholder="Madre, padre o responsable"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Telefono de contacto
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.telefonoContacto}
+                    onChange={(e) => setFormData({...formData, telefonoContacto: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    placeholder="10 digitos"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-lg border bg-white p-4">
+              <div className="mb-4 flex items-center gap-2 text-cyan-800">
+                <span className="material-icons">notes</span>
+                <h4 className="font-semibold text-gray-900">Notas internas</h4>
+              </div>
               <textarea
                 value={formData.notas}
                 onChange={(e) => setFormData({...formData, notas: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                rows="2"
-                placeholder="Información adicional..."
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                rows="3"
+                placeholder="Notas medicas, observaciones o comentarios de recepcion"
               />
-            </div>
-            
-            <div className="md:col-span-2">
-              <label className="flex items-center gap-2">
+            </section>
+
+            {editingId && (
+              <label className="inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
                 <input
                   type="checkbox"
                   checked={formData.activo}
                   onChange={(e) => setFormData({...formData, activo: e.target.checked})}
                   className="rounded"
                 />
-                <span className="text-sm text-gray-700">Activo</span>
+                <span className="text-sm text-gray-700">Alumno activo</span>
               </label>
-            </div>
-            
-            <div className="md:col-span-2 flex justify-end gap-2 pt-2">
-              <button
-                type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
-                disabled={loading}
-              >
-                <span className="material-icons">{editingId ? 'save' : 'add'}</span>
-                {editingId ? 'Guardar cambios' : 'Crear estudiante'}
-              </button>
+            )}
+
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={resetForm}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-5 py-2 rounded-lg"
+                className="bg-white border hover:bg-gray-50 text-gray-800 px-5 py-2 rounded-lg"
               >
                 Cancelar
+              </button>
+              <button
+                type="submit"
+                className="bg-cyan-700 hover:bg-cyan-800 text-white px-5 py-2 rounded-lg flex items-center justify-center gap-2 font-medium shadow-sm"
+                disabled={loading}
+              >
+                <span className="material-icons">{editingId ? 'save' : 'add'}</span>
+                {editingId ? 'Guardar cambios' : 'Crear alumno'}
               </button>
             </div>
           </form>
@@ -375,7 +415,7 @@ const handleConfirmAction = async () => {
                     <td className="px-6 py-4">
                       {student.edad ? (
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded">
-                          {student.edad} años
+                          {student.edad} aÃƒÆ’Ã‚Â±os
                         </span>
                       ) : (
                         <span className="text-gray-400 text-sm">No especificada</span>
@@ -383,7 +423,7 @@ const handleConfirmAction = async () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-700">
-                        {student.telefonoContacto || 'Sin teléfono'}
+                        {student.telefonoContacto || 'Sin telÃƒÆ’Ã‚Â©fono'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -415,9 +455,9 @@ const handleConfirmAction = async () => {
                           <span className="material-icons text-lg">delete</span>
                         </button>
 
-                        {/* NUEVO BOTÓN: BAJA TOTAL */}
+                        {/* NUEVO BOTÃƒÆ’Ã¢â‚¬Å“N: BAJA TOTAL */}
    {student.activo ? (
-      /* SI ESTÁ ACTIVO: Mostrar botón para DAR DE BAJA */
+      /* SI ESTÃƒÆ’Ã‚Â ACTIVO: Mostrar botÃƒÆ’Ã‚Â³n para DAR DE BAJA */
       <button
         onClick={() => handleBajaTotal(student)}
         className="text-orange-600 hover:text-orange-900"
@@ -426,7 +466,7 @@ const handleConfirmAction = async () => {
         <span className="material-icons text-lg">person_off</span>
       </button>
     ) : (
-      /* SI ESTÁ INACTIVO: Mostrar botón para REACTIVAR */
+      /* SI ESTÃƒÆ’Ã‚Â INACTIVO: Mostrar botÃƒÆ’Ã‚Â³n para REACTIVAR */
       <button
         onClick={() => handleReactivar(student)}
         className="text-green-600 hover:text-green-900"
@@ -447,7 +487,28 @@ const handleConfirmAction = async () => {
           <div className="px-6 py-4 border-t bg-gray-50">
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                Mostrando {students.length} estudiantes
+                Mostrando {students.length} de {pagination.total || students.length} estudiantes
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => goToPage(pagination.page - 1)}
+                  disabled={pagination.page <= 1 || loading}
+                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <span className="text-gray-600">
+                  Pagina {pagination.page} de {pagination.pages || 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => goToPage(pagination.page + 1)}
+                  disabled={!pagination.hasMore || loading}
+                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
               </div>
               <div className="text-sm text-gray-600">
                 <span className="font-medium">{students.filter(s => s.activo).length}</span> activos /{' '}
@@ -457,7 +518,7 @@ const handleConfirmAction = async () => {
           </div>
         </>
       )}
-      {/* MODAL DE CONFIRMACIÓN PERSONALIZADO */}
+      {/* MODAL DE CONFIRMACIÃƒÆ’Ã¢â‚¬Å“N PERSONALIZADO */}
 {confirmModal.show && (
   <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm">
     <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-100">
@@ -474,8 +535,8 @@ const handleConfirmAction = async () => {
       
       <p className="text-gray-600 mb-6">
         {confirmModal.tipo === 'reactivar' 
-          ? `¿Deseas reactivar a ${confirmModal.student?.nombre}? Podrás asignarle clases nuevamente.`
-          : `¿Estás seguro de dar de baja a ${confirmModal.student?.nombre}? Se eliminarán sus clases futuras.`
+          ? `Ãƒâ€šÃ‚Â¿Deseas reactivar a ${confirmModal.student?.nombre}? PodrÃƒÆ’Ã‚Â¡s asignarle clases nuevamente.`
+          : `Ãƒâ€šÃ‚Â¿EstÃƒÆ’Ã‚Â¡s seguro de dar de baja a ${confirmModal.student?.nombre}? Se eliminarÃƒÆ’Ã‚Â¡n sus clases futuras.`
         }
       </p>
       
@@ -487,7 +548,7 @@ const handleConfirmAction = async () => {
           Cancelar
         </button>
        <button
-  onClick={handleConfirmAction} // <--- Esta es la que dispara la lógica de arriba
+  onClick={handleConfirmAction} // <--- Esta es la que dispara la lÃƒÆ’Ã‚Â³gica de arriba
   className={`flex-1 px-4 py-2 text-white rounded-lg font-medium ${
     confirmModal.tipo === 'reactivar' ? 'bg-green-600' : 'bg-orange-600'
   }`}
@@ -501,3 +562,4 @@ const handleConfirmAction = async () => {
     </div>
   );
 }
+

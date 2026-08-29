@@ -1,9 +1,27 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { withBranchParams, withBranchPayload } from '../branchScope';
 
-// const API_BASE_URL = 'http://192.168.80.130:3000/api';
 
-// Crear instancia de axios con configuración base
+export const extractList = (payload, key) => {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload[key])) return payload[key];
+  return [];
+};
+
+export const extractPagination = (payload, fallbackLength = 0) => {
+  if (!payload || Array.isArray(payload)) {
+    return { total: fallbackLength, page: 1, limit: fallbackLength || 1, pages: 1, hasMore: false };
+  }
+
+  return {
+    total: Number(payload.total ?? fallbackLength),
+    page: Number(payload.page ?? 1),
+    limit: Number(payload.limit ?? payload.pageSize ?? fallbackLength ?? 1),
+    pages: Number(payload.pages ?? 1),
+    hasMore: Boolean(payload.hasMore ?? payload.has_more ?? false),
+  };
+};
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -12,7 +30,6 @@ const api = axios.create({
   },
 });
 
-// Interceptor para manejar errores
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -22,41 +39,37 @@ api.interceptors.response.use(
 );
 
 export const recurringSlotService = {
-  // Endpoint especial para crear slots recurrentes
-  createRecurring: (data) => api.post('/slots/recurring', data),
-  
-  // También necesitamos endpoints normales para slots
-  getAll: (params = {}) => api.get('/slots', { params }),
+  createRecurring: (data) => api.post('/slots/recurring', withBranchPayload(data)),
+  getAll: (params = {}) => api.get('/slots', { params: withBranchParams(params) }),
   getById: (id) => api.get(`/slots/${id}`),
-  create: (data) => api.post('/slots', data),
-  update: (id, data) => api.put(`/slots/${id}`, data),
+  create: (data) => api.post('/slots', withBranchPayload(data)),
+  update: (id, data) => api.put(`/slots/${id}`, withBranchPayload(data)),
   delete: (id) => api.delete(`/slots/${id}`),
-  getByInstructor: (instructorId, params = {}) => 
-    api.get(`/instructors/${instructorId}/slots`, { params }),
+  getByInstructor: (instructorId, params = {}) =>
+    api.get(`/instructors/${instructorId}/slots`, { params: withBranchParams(params) }),
 };
 
-// Servicios para cada entidad
 export const poolService = {
-  getAll: () => api.get('/pools'),
+  getAll: (params = {}) => api.get('/pools', { params: withBranchParams(params) }),
   getById: (id) => api.get(`/pools/${id}`),
-  create: (data) => api.post('/pools', data),
-  update: (id, data) => api.put(`/pools/${id}`, data),
+  create: (data) => api.post('/pools', withBranchPayload(data)),
+  update: (id, data) => api.put(`/pools/${id}`, withBranchPayload(data)),
   delete: (id) => api.delete(`/pools/${id}`),
 };
 
 export const instructorService = {
-  getAll: (params = {}) => api.get('/instructors', { params }),
+  getAll: (params = {}) => api.get('/instructors', { params: withBranchParams(params) }),
   getById: (id) => api.get(`/instructors/${id}`),
-  create: (data) => api.post('/instructors', data),
-  update: (id, data) => api.put(`/instructors/${id}`, data),
+  create: (data) => api.post('/instructors', withBranchPayload(data)),
+  update: (id, data) => api.put(`/instructors/${id}`, withBranchPayload(data)),
   delete: (id) => api.delete(`/instructors/${id}`),
 };
 
 export const studentService = {
-  getAll: () => api.get('/students'),
+  getAll: (params = {}) => api.get('/students', { params: withBranchParams(params) }),
   getById: (id) => api.get(`/students/${id}`),
-  create: (data) => api.post('/students', data),
-  update: (id, data) => api.put(`/students/${id}`, data),
+  create: (data) => api.post('/students', withBranchPayload(data)),
+  update: (id, data) => api.put(`/students/${id}`, withBranchPayload(data)),
   delete: (id) => api.delete(`/students/${id}`),
 };
 
@@ -69,13 +82,14 @@ export const timeBlockService = {
 };
 
 export const slotService = {
-  getAll: (params = {}) => api.get('/slots', { params }),
+  getAll: (params = {}) => api.get('/slots', { params: withBranchParams(params) }),
   getById: (id) => api.get(`/slots/${id}`),
-  create: (data) => api.post('/slots', data),
-  update: (id, data) => api.put(`/slots/${id}`, data),
+  create: (data) => api.post('/slots', withBranchPayload(data)),
+  update: (id, data) => api.put(`/slots/${id}`, withBranchPayload(data)),
   delete: (id) => api.delete(`/slots/${id}`),
-  getByInstructor: (instructorId, params = {}) => 
-    api.get(`/instructors/${instructorId}/slots`, { params }),
+  getByInstructor: (instructorId, params = {}) =>
+    api.get(`/instructors/${instructorId}/slots`, { params: withBranchParams(params) }),
 };
 
 export default api;
+

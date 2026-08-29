@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { recurringSlotService, instructorService, studentService, timeBlockService, poolService } from '../../services/api';
+import { recurringSlotService, instructorService, studentService, timeBlockService, poolService, extractList, extractPagination } from '../../services/api';
 import Alert from '../ui/Alert';
+
+const SLOTS_PAGE_SIZE = 20;
+const LOOKUP_PAGE_SIZE = 500;
 
 export default function RecurringSlotsCRUD() {
   const [slots, setSlots] = useState([]);
@@ -12,6 +15,7 @@ export default function RecurringSlotsCRUD() {
   const [formLoading, setFormLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(true); // <-- Nuevo estado para mostrar/ocultar filtros
+  const [selectedPackage, setSelectedPackage] = useState('');
 
    const [alert, setAlert] = useState({
   message: '',
@@ -31,6 +35,13 @@ export default function RecurringSlotsCRUD() {
   
   // Slots filtrados
   const [filteredSlots, setFilteredSlots] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: SLOTS_PAGE_SIZE,
+    total: 0,
+    pages: 1,
+    hasMore: false
+  });
 
   // Formulario para slots recurrentes
   const [formData, setFormData] = useState({
@@ -48,8 +59,14 @@ export default function RecurringSlotsCRUD() {
   const classTypes = [
     { value: 'P', label: 'Clase de Prueba' },
     { value: 'C', label: 'Clase Suelta' },
-    { value: 'R', label: 'Reposición' },
+    { value: 'R', label: 'Reposicion' },
     { value: 'F', label: 'Clase Fija' }
+  ];
+
+  const monthlyPackages = [
+    { value: '1', label: '1 vez por semana', price: '$1,650', sessions: '4 clases aprox.' },
+    { value: '2', label: '2 veces por semana', price: '$2,650', sessions: '8 clases aprox.' },
+    { value: '3', label: '3 veces por semana', price: '$3,340', sessions: '12 clases aprox.' }
   ];
 
   const statusOptions = [
@@ -63,22 +80,21 @@ export default function RecurringSlotsCRUD() {
   const daysOfWeekOptions = [
     { value: 'L', label: 'Lunes', short: 'L' },
     { value: 'M', label: 'Martes', short: 'M' },
-    { value: 'MI', label: 'Miércoles', short: 'MI' },
+    { value: 'MI', label: 'Miercoles', short: 'MI' },
     { value: 'J', label: 'Jueves', short: 'J' },
     { value: 'V', label: 'Viernes', short: 'V' },
-    { value: 'S', label: 'Sábado', short: 'S' },
+    { value: 'S', label: 'Sabado', short: 'S' },
     { value: 'D', label: 'Domingo', short: 'D' }
   ];
 
-  // Cargar datos iniciales
+  // Cargar datos y aplicar filtros desde el API.
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(1);
+  }, [filters]);
 
-  // Aplicar filtros cuando cambien
   useEffect(() => {
-    applyFilters();
-  }, [slots, filters]);
+    setFilteredSlots(slots);
+  }, [slots]);
 
   const formatDateUTC = (dateString) => {
     const date = new Date(dateString);
@@ -108,20 +124,33 @@ export default function RecurringSlotsCRUD() {
     });
   };
 
-  const fetchData = async () => {
+  const fetchData = async (page = pagination.page, pageSize = pagination.pageSize) => {
     try {
       setLoading(true);
+      const slotParams = { page, pageSize };
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) slotParams[key] = value;
+      });
+
       const [slotsRes, instructorsRes, studentsRes, timeBlocksRes, poolsRes] = await Promise.all([
-        recurringSlotService.getAll(),
+        recurringSlotService.getAll(slotParams),
         instructorService.getAll({ activo: true }),
-        studentService.getAll({ activo: true }),
+        studentService.getAll({ activo: true, page: 1, pageSize: LOOKUP_PAGE_SIZE }),
         timeBlockService.getAll(),
         poolService.getAll({ activo: true })
       ]);
-      
-      setSlots(slotsRes.data);
+
+      const slotList = extractList(slotsRes.data, 'slots');
+      const studentList = extractList(studentsRes.data, 'students');
+
+      setSlots(slotList);
+      setFilteredSlots(slotList);
+      setPagination({
+        ...extractPagination(slotsRes.data, slotList.length),
+        pageSize
+      });
       setInstructors(instructorsRes.data);
-      setStudents(studentsRes.data);
+      setStudents(studentList);
       setTimeBlocks(timeBlocksRes.data);
       setPools(poolsRes.data);
     } catch (error) {
@@ -132,49 +161,10 @@ export default function RecurringSlotsCRUD() {
     }
   };
 
-  const applyFilters = () => {
-    let result = [...slots];
-
-    // Filtrar por instructor
-    if (filters.instructorId) {
-      result = result.filter(slot => slot.instructorId === filters.instructorId);
-    }
-
-    // Filtrar por estudiante
-    if (filters.studentId) {
-      result = result.filter(slot => slot.studentId === filters.studentId);
-    }
-
-    // Filtrar por horario
-    if (filters.timeBlockId) {
-      result = result.filter(slot => slot.timeBlockId === filters.timeBlockId);
-    }
-
-    // Filtrar por tipo de clase
-    if (filters.classType) {
-      result = result.filter(slot => slot.classType === filters.classType);
-    }
-
-    // Filtrar por estado
-    if (filters.status) {
-      result = result.filter(slot => slot.status === filters.status);
-    }
-
-    // Filtrar por fecha desde
-    if (filters.fechaDesde) {
-      const fechaDesde = new Date(filters.fechaDesde + 'T00:00:00.000Z');
-      result = result.filter(slot => new Date(slot.fecha) >= fechaDesde);
-    }
-
-    // Filtrar por fecha hasta
-    if (filters.fechaHasta) {
-      const fechaHasta = new Date(filters.fechaHasta + 'T23:59:59.999Z');
-      result = result.filter(slot => new Date(slot.fecha) <= fechaHasta);
-    }
-
-    setFilteredSlots(result);
+  const goToPage = (page) => {
+    const nextPage = Math.max(1, Math.min(page, pagination.pages || 1));
+    fetchData(nextPage, pagination.pageSize);
   };
-
   const handleFilterChange = (name, value) => {
     setFilters(prev => ({
       ...prev,
@@ -195,11 +185,11 @@ export default function RecurringSlotsCRUD() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Está seguro de eliminar este horario?')) return;
+    if (!window.confirm('Estas seguro de eliminar este horario?')) return;
     
     try {
       await recurringSlotService.delete(id);
-      setSlots(slots.filter(s => s.id !== id));
+      fetchData(pagination.page);
       showAlert('Horario eliminado correctamente');
     } catch (error) {
       console.error('Error al eliminar horario:', error);
@@ -233,20 +223,20 @@ export default function RecurringSlotsCRUD() {
   };
 
   const generatePatternDescription = () => {
-    if (formData.daysOfWeek.length === 0) return 'Sin días seleccionados';
+    if (formData.daysOfWeek.length === 0) return 'Sin dias seleccionados';
     
     const selectedDays = formData.daysOfWeek.map(day => 
       daysOfWeekOptions.find(d => d.value === day)?.short || day
     );
     
-    return `${selectedDays.join(', ')} por ${formData.duration} días`;
+    return `${selectedDays.join(', ')} por 30 dias`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (formData.daysOfWeek.length === 0) {
-      showAlert('Por favor selecciona al menos un día de la semana');
+      showAlert('Por favor selecciona al menos un dia de la semana');
       return;
     }
     
@@ -264,9 +254,9 @@ export default function RecurringSlotsCRUD() {
       
       if (response.data && Array.isArray(response.data.createdSlots)) {
         setSlots([...slots, ...response.data.createdSlots]);
-        showAlert(`¡Se crearon ${response.data.createdSlots.length} slots exitosamente!`);
+        showAlert(`Se crearon ${response.data.createdSlots.length} slots exitosamente!`);
       } else {
-        fetchData();
+        fetchData(pagination.page);
         showAlert('Slots creados exitosamente');
       }
       
@@ -291,6 +281,7 @@ export default function RecurringSlotsCRUD() {
       daysOfWeek: [],
       notas: ''
     });
+    setSelectedPackage('');
     setShowForm(false);
   };
 
@@ -338,7 +329,7 @@ export default function RecurringSlotsCRUD() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Slots Recurrentes</h2>
-            <p className="text-gray-600">Crea horarios automáticos por período</p>
+            <p className="text-gray-600">Crea horarios automaticos por periodo</p>
           </div>
           <div className="flex gap-2">
             <button 
@@ -349,7 +340,7 @@ export default function RecurringSlotsCRUD() {
               Nuevo Slot Recurrente
             </button>
             <button 
-              onClick={fetchData}
+              onClick={() => fetchData(pagination.page)}
               className="bg-white border text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <span className="material-icons-round">refresh</span>
@@ -359,7 +350,7 @@ export default function RecurringSlotsCRUD() {
         </div>
       </div>
 
-      {/* Sección de Filtros - Con botón para mostrar/ocultar */}
+      {/* Seccion de filtros */}
       <div className="border-b bg-gray-50">
         <div className="p-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -370,7 +361,7 @@ export default function RecurringSlotsCRUD() {
               <span className="material-icons-round">
                 {showFilters ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
               </span>
-              Filtros de búsqueda
+              Filtros de busqueda
               {Object.values(filters).some(f => f) && (
                 <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
                   {Object.values(filters).filter(f => f).length} activo(s)
@@ -521,7 +512,7 @@ export default function RecurringSlotsCRUD() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                   <div className="text-sm text-blue-700 font-medium">Resultados</div>
                   <div className="text-2xl font-bold text-blue-800">{filteredSlots.length}</div>
-                  <div className="text-xs text-blue-600">de {slots.length} slots</div>
+                  <div className="text-xs text-blue-600">de {pagination.total || slots.length} slots</div>
                 </div>
               </div>
             </div>
@@ -538,170 +529,197 @@ export default function RecurringSlotsCRUD() {
             </button>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Primera fila: Información básica */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Instructor *
-                </label>
-                <select
-                  value={formData.instructorId}
-                  onChange={(e) => handleInstructorChange(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                >
-                  <option value="">Seleccionar instructor</option>
-                  {instructors.map(instructor => (
-                    <option key={instructor.id} value={instructor.id}>
-                      {instructor.nombre} ({instructor.pool?.nombre || 'Sin alberca'})
-                    </option>
-                  ))}
-                </select>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <section className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-icons-round text-blue-600">person_search</span>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Alumno</h4>
+                  <p className="text-sm text-gray-500">Selecciona primero el alumno que recibira las clases.</p>
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estudiante *
-                </label>
-                <select
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({...formData, studentId: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                >
-                  <option value="">Seleccionar estudiante</option>
-                  {students.map(student => (
-                    <option key={student.id} value={student.id}>
-                      {student.nombre} {student.edad ? `(${student.edad} años)` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Horario *
-                </label>
-                <select
-                  name="timeBlockId"
-                  value={formData.timeBlockId || ''}
-                  onChange={(e) => setFormData({...formData, timeBlockId: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                >
-                  <option value="">Seleccionar horario</option>
-                  {timeBlocks.map(block => (
-                    <option key={block.id} value={block.id}>
-                      {block.horaInicio} - {block.horaFin} (30 min)
-                    </option>
-                  ))}
-                </select>
-                {formData.timeBlockId && (
-                  <div className="text-xs text-green-600 mt-1">
-                    Horario seleccionado: {timeBlocks.find(b => b.id === formData.timeBlockId)?.horaInicio} - {timeBlocks.find(b => b.id === formData.timeBlockId)?.horaFin}
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estudiante *
+                  </label>
+                  <select
+                    value={formData.studentId}
+                    onChange={(e) => setFormData({...formData, studentId: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    required
+                  >
+                    <option value="">Seleccionar estudiante</option>
+                    {students.map(student => (
+                      <option key={student.id} value={student.id}>
+                        {student.nombre} {student.edad ? `(${student.edad} anos)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                  <div className="text-xs uppercase tracking-wide text-blue-700 font-semibold">Alumno seleccionado</div>
+                  <div className="mt-1 text-sm font-medium text-gray-900">
+                    {formData.studentId ? students.find(s => s.id === formData.studentId)?.nombre : 'Pendiente'}
                   </div>
-                )}
-              </div>  
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Clase *
-                </label>
-                <select
-                  value={formData.classType}
-                  onChange={(e) => setFormData({...formData, classType: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                >
-                  {classTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            {/* Segunda fila: Fechas y duración */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de inicio *
-                </label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Duración (días) *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  placeholder="30"
-                  required
-                />
-                <div className="text-xs text-gray-500 mt-1">
-                  {formData.duration} días ≈ {Math.floor(formData.duration / 30)} meses
                 </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de fin
-                </label>
-                <input
-                  type="date"
-                  value={getEndDate() || ''}
-                  className="w-full px-3 py-2 border rounded-lg bg-gray-50"
-                  readOnly
-                />
-                <div className="text-xs text-gray-500 mt-1">
-                  Calculado automáticamente
+            </section>
+
+            <section className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-icons-round text-emerald-600">payments</span>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Paquete mensual</h4>
+                  <p className="text-sm text-gray-500">Elige la frecuencia antes de asignar los dias de clase.</p>
                 </div>
               </div>
-            </div>
-            
-            {/* Tercera fila: Días de la semana */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Días de la semana *
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {daysOfWeekOptions.map(day => (
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {monthlyPackages.map(option => (
                   <button
-                    key={day.value}
+                    key={option.value}
                     type="button"
-                    onClick={() => handleDayToggle(day.value)}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      formData.daysOfWeek.includes(day.value)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    onClick={() => setSelectedPackage(option.value)}
+                    className={`text-left border rounded-lg p-4 transition-colors ${
+                      selectedPackage === option.value
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+                        : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-300'
                     }`}
                   >
-                    {day.label}
+                    <div className="font-semibold">{option.label}</div>
+                    <div className="text-2xl font-bold mt-2">{option.price}</div>
+                    <div className="text-xs text-gray-500 mt-1">{option.sessions}</div>
                   </button>
                 ))}
               </div>
-              <div className="mt-2 text-sm text-gray-600">
-                Patrón: {generatePatternDescription()}
+            </section>
+
+            <section className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-icons-round text-amber-600">event_available</span>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Horario de clases</h4>
+                  <p className="text-sm text-gray-500">Define instructor, horario, periodo y dias de asistencia.</p>
+                </div>
               </div>
-              
-            </div>
-            
-            {/* Cuarta fila: Notas y acciones */}
-            <div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Instructor *
+                  </label>
+                  <select
+                    value={formData.instructorId}
+                    onChange={(e) => handleInstructorChange(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    required
+                  >
+                    <option value="">Seleccionar instructor</option>
+                    {instructors.map(instructor => (
+                      <option key={instructor.id} value={instructor.id}>
+                        {instructor.nombre} ({instructor.pool?.nombre || 'Sin alberca'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Horario *
+                  </label>
+                  <select
+                    name="timeBlockId"
+                    value={formData.timeBlockId || ''}
+                    onChange={(e) => setFormData({...formData, timeBlockId: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    required
+                  >
+                    <option value="">Seleccionar horario</option>
+                    {timeBlocks.map(block => (
+                      <option key={block.id} value={block.id}>
+                        {block.horaInicio} - {block.horaFin} (30 min)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de clase *
+                  </label>
+                  <select
+                    value={formData.classType}
+                    onChange={(e) => setFormData({...formData, classType: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    required
+                  >
+                    {classTypes.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha de inicio *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="bg-emerald-50 border border-emerald-100 rounded-lg px-4 py-3">
+                  <div className="text-xs uppercase tracking-wide text-emerald-700 font-semibold">Vigencia</div>
+                  <div className="mt-1 text-sm font-medium text-gray-900">30 dias desde la fecha de inicio</div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
+                  <div className="text-xs uppercase tracking-wide text-amber-700 font-semibold">Horario elegido</div>
+                  <div className="mt-1 text-sm font-medium text-gray-900">
+                    {formData.timeBlockId
+                      ? `${timeBlocks.find(b => b.id === formData.timeBlockId)?.horaInicio} - ${timeBlocks.find(b => b.id === formData.timeBlockId)?.horaFin}`
+                      : 'Pendiente'}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-5">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Dias de la semana *
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {daysOfWeekOptions.map(day => (
+                    <button
+                      key={day.value}
+                      type="button"
+                      onClick={() => handleDayToggle(day.value)}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        formData.daysOfWeek.includes(day.value)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {day.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  Patron: {generatePatternDescription()}
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white border border-gray-200 rounded-lg p-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Notas (opcional)
               </label>
@@ -710,63 +728,66 @@ export default function RecurringSlotsCRUD() {
                 onChange={(e) => setFormData({...formData, notas: e.target.value})}
                 className="w-full px-3 py-2 border rounded-lg"
                 rows="2"
-                placeholder="Notas adicionales sobre estas clases..."
+                placeholder="Observaciones internas sobre estas clases..."
               />
-            </div>
-            
-            {/* Resumen y acciones */}
+            </section>
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-800 mb-2">Resumen del slot recurrente:</h4>
+              <h4 className="font-medium text-blue-800 mb-2">Resumen</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                 <div>
+                  <span className="font-medium">Alumno:</span>{' '}
+                  {formData.studentId ? students.find(s => s.id === formData.studentId)?.nombre : 'No seleccionado'}
+                </div>
+                <div>
+                  <span className="font-medium">Paquete:</span>{' '}
+                  {selectedPackage ? monthlyPackages.find(option => option.value === selectedPackage)?.label : 'No seleccionado'}
+                </div>
+                <div>
                   <span className="font-medium">Instructor:</span>{' '}
-                  {formData.instructorId ? 
-                    instructors.find(i => i.id === formData.instructorId)?.nombre : 
-                    'No seleccionado'}
+                  {formData.instructorId ? instructors.find(i => i.id === formData.instructorId)?.nombre : 'No seleccionado'}
                 </div>
                 <div>
-                  <span className="font-medium">Estudiante:</span>{' '}
-                  {formData.studentId ? 
-                    students.find(s => s.id === formData.studentId)?.nombre : 
-                    'No seleccionado'}
+                  <span className="font-medium">Periodo:</span>{' '}
+                  {formData.startDate ? formatDate(formData.startDate) : 'No definido'} a {getEndDate() ? formatDate(getEndDate()) : 'No definido'}
                 </div>
                 <div>
-                  <span className="font-medium">Período:</span>{' '}
-                  {formData.startDate ? formatDate(formData.startDate) : 'No definido'} → {getEndDate() ? formatDate(getEndDate()) : 'No definido'}
+                  <span className="font-medium">Dias:</span>{' '}
+                  {formData.daysOfWeek.length > 0
+                    ? formData.daysOfWeek.map(d => daysOfWeekOptions.find(day => day.value === d)?.short).join(', ')
+                    : 'Ninguno'}
                 </div>
                 <div>
-                  <span className="font-medium">Días seleccionados:</span>{' '}
-                  {formData.daysOfWeek.length > 0 ? 
-                    formData.daysOfWeek.map(d => daysOfWeekOptions.find(day => day.value === d)?.short).join(', ') : 
-                    'Ninguno'}
+                  <span className="font-medium">Tipo:</span>{' '}
+                  {classTypes.find(type => type.value === formData.classType)?.label}
                 </div>
               </div>
             </div>
-            
-            <div className="flex justify-end gap-2 pt-4">
-              <button
-                type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg flex items-center gap-2"
-                disabled={formLoading}
-              >
-                {formLoading ? (
-                  <>
-                    <span className="material-icons-round animate-spin">refresh</span>
-                    Creando slots...
-                  </>
-                ) : (
-                  <>
-                    <span className="material-icons-round">add_circle</span>
-                    Crear Slots Recurrentes
-                  </>
-                )}
-              </button>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={resetForm}
                 className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-5 py-2 rounded-lg"
               >
                 Cancelar
+              </button>
+              <button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg flex items-center justify-center gap-2"
+                disabled={formLoading}
+              >
+                {formLoading ? (
+                  <>
+                    <span className="material-icons-round animate-spin">refresh</span>
+                    Creando horarios...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-icons-round">add_circle</span>
+                    Registrar clases
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -888,12 +909,33 @@ export default function RecurringSlotsCRUD() {
           <div className="px-6 py-4 border-t bg-gray-50">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="text-sm text-gray-600">
-                Mostrando {filteredSlots.length} de {slots.length} slots
+                Mostrando {filteredSlots.length} de {pagination.total || slots.length} slots
                 {Object.values(filters).some(f => f) && (
                   <span className="ml-2 text-blue-600">
                     (filtrados)
                   </span>
                 )}
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => goToPage(pagination.page - 1)}
+                  disabled={pagination.page <= 1 || loading}
+                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <span className="text-gray-600">
+                  Pagina {pagination.page} de {pagination.pages || 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => goToPage(pagination.page + 1)}
+                  disabled={!pagination.hasMore || loading}
+                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
               </div>
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-2">
@@ -922,3 +964,5 @@ export default function RecurringSlotsCRUD() {
     </div>
   );
 }
+
+

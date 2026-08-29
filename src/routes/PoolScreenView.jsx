@@ -152,6 +152,7 @@ export default function PoolScreenView() {
       setLastUpdate(new Date());
     }, 30000);
     
+    
     const viewInterval = setInterval(() => {
       setShowCurrentTimeOnly(prev => !prev);
     }, 30000);
@@ -403,9 +404,7 @@ console.log("hoy: " + today);
         <main className={`flex-1 overflow-hidden max-h-[calc(100vh-140px)] ${showCurrentTimeOnly ? 'flex items-center justify-center' : ''}`}>
           <div 
             ref={tableRef}
-            className={`h-full mx-auto bg-white rounded-xl shadow border overflow-hidden flex flex-col ${
-              showCurrentTimeOnly ? 'w-full' : 'w-full'
-            }`}
+            className="h-full mx-auto bg-white rounded-xl shadow border overflow-hidden flex flex-col w-full"
           >
             {/* Header de tabla con ancho controlado */}
             <div 

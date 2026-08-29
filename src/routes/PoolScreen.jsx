@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { withBranchParams, withBranchPayload } from '../branchScope';
 
 export default function PoolScreen() {
   const { poolId } = useParams();
@@ -50,7 +51,7 @@ export default function PoolScreen() {
 
 
   const [moveSlot, setMoveSlot] = useState(null);
-    const [showMoveMenu, setShowMoveMenu] = useState(null); // Para controlar menú
+    const [showMoveMenu, setShowMoveMenu] = useState(null); // Para controlar menÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº
     const [moveData, setMoveData] = useState({
     nuevaFecha: '',
     nuevoTimeBlockId: '',
@@ -63,13 +64,16 @@ export default function PoolScreen() {
     const [moviendoClase, setMoviendoClase] = useState(false);
 
   const alertTimeoutRef = useRef(null);
+  const studentSearchTimeoutRef = useRef(null);
+  const reservaStudentSearchTimeoutRef = useRef(null);
 
   const tipos = [
     { l: "P", c: "bg-purple-100 text-purple-700", nombre: "Clase prueba" },
     { l: "C", c: "bg-amber-100 text-amber-700", nombre: "Clase suelta" },
-    { l: "R", c: "bg-indigo-100 text-indigo-700", nombre: "Reposición" },
+    { l: "R", c: "bg-indigo-100 text-indigo-700", nombre: "Reposicion" },
     { l: "F", c: "bg-blue-100 text-blue-700", nombre: "Clase fija" },
   ];
+  const tiposReservaDirecta = tipos.filter(tipo => tipo.l !== 'F');
 
   const showAlert = (message, type = 'info') => {
   // Limpia timeout anterior
@@ -86,7 +90,7 @@ export default function PoolScreen() {
 };
 
 
-  // Configuración de horarios por turno
+  // ConfiguraciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n de horarios por turno
   const turnConfig = {
     matutino: {
       start: 6,  // 6:00 AM
@@ -129,12 +133,12 @@ export default function PoolScreen() {
   };
 
   const abrirModalMoverClase = (slot) => {
-  // Calcular fecha mínima (mañana)
+  // Calcular fecha mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­nima (maÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±ana)
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = tomorrow.toLocaleDateString('en-CA').split('T')[0];
   
-  // Calcular fecha máxima (30 días desde mañana)
+  // Calcular fecha mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡xima (30 dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­as desde maÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±ana)
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 30);
   const maxDateStr = maxDate.toLocaleDateString('en-CA').split('T')[0];
@@ -160,11 +164,11 @@ export default function PoolScreen() {
     notas: ''
   });
   
-  // Cerrar menú
+  // Cerrar menÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº
   setShowMoveMenu(null);
 };
 
-// 🔄 FUNCIÓN: Cargar instructores disponibles
+// ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ FUNCIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N: Cargar instructores disponibles
 const cargarInstructoresDisponibles = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/instructors`, {
@@ -177,7 +181,7 @@ const cargarInstructoresDisponibles = async () => {
   }
 };
 
-// 🔄 FUNCIÓN: Cargar horarios disponibles
+// ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ FUNCIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N: Cargar horarios disponibles
 const cargarTimeBlocksDisponibles = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/timeblocks`);
@@ -188,7 +192,7 @@ const cargarTimeBlocksDisponibles = async () => {
   }
 };
 
-// 🔄 FUNCIÓN: Mover clase
+// ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ FUNCIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N: Mover clase
 const moverClase = async () => {
   if (!moveSlot) return;
 
@@ -199,7 +203,7 @@ const moverClase = async () => {
 
   const fechaClase = extraerSoloFecha(moveSlot.fecha);
 
-  console.log('🔍 DEBUG FECHAS VALIDACIÓN:', {
+  console.log('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â DEBUG FECHAS VALIDACIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N:', {
     hoy: hoy.toISOString(),
     fechaClase: fechaClase.toISOString(),
     fechaClaseDisplay: formatFechaSlot(moveSlot.fecha)
@@ -207,7 +211,7 @@ const moverClase = async () => {
 
   if (fechaClase < hoy) {
     const fechaDisplay = formatFechaSlot(moveSlot.fecha);
-    const errorMsg = `❌ Esta clase fue el ${fechaDisplay}. No se puede mover una clase que ya pasó.`;
+    const errorMsg = `ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Esta clase fue el ${fechaDisplay}. No se puede mover una clase que ya pasÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³.`;
     setErrorMover(errorMsg);
     showAlert(errorMsg, 'error');
     return;
@@ -227,7 +231,7 @@ if (fechaClase.getTime() === hoy.getTime()) {
     const tiempoActual = horaActual * 60 + minutoActual;
     const tiempoClase = horaClase * 60 + minutoClase;
     
-    console.log('🔍 DEBUG HORA:', {
+    console.log('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â DEBUG HORA:', {
       horaActual,
       minutoActual,
       horaClase,
@@ -237,9 +241,9 @@ if (fechaClase.getTime() === hoy.getTime()) {
       diferencia: tiempoActual - tiempoClase
     });
     
-    // Si ya pasó la hora de la clase (con margen de 5 minutos)
+    // Si ya pasÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ la hora de la clase (con margen de 5 minutos)
     if (tiempoActual > tiempoClase + 5) {
-      const errorMsg = `❌ Esta clase comenzó a las ${horaClaseStr}. No se puede mover una clase que ya está en curso o terminó.`;
+      const errorMsg = `ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Esta clase comenzÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ a las ${horaClaseStr}. No se puede mover una clase que ya estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ en curso o terminÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³.`;
       setErrorMover(errorMsg);
       showAlert(errorMsg, 'error');
       return;
@@ -249,7 +253,7 @@ if (fechaClase.getTime() === hoy.getTime()) {
   
   // Validar que haya al menos un cambio
   if (!moveData.nuevaFecha && !moveData.nuevoTimeBlockId && !moveData.nuevoInstructorId) {
-    const errorMsg = '❌ Debes seleccionar al menos un cambio: fecha, horario o instructor';
+    const errorMsg = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Debes seleccionar al menos un cambio: fecha, horario o instructor';
     setErrorMover(errorMsg);
     return;
   }
@@ -270,19 +274,19 @@ if (fechaClase.getTime() === hoy.getTime()) {
 
     delete payload.motivo;
     
-    console.log('🔄 Moviendo clase con payload:', payload);
+    console.log('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ Moviendo clase con payload:', payload);
     
     const response = await axios.post(
       `${API_BASE_URL}/slots/${moveSlot.id}/move`,
       payload
     );
     
-    showAlert(response.data.message || '✅ Clase movida exitosamente');
+    showAlert(response.data.message || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Clase movida exitosamente');
     setMoveSlot(null);
     fetchData();
     
   } catch (error) {
-    console.error('❌ Error moviendo clase:', error);
+    console.error('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Error moviendo clase:', error);
     if (error.response?.data?.error) {
       showAlert(`Error: ${error.response.data.error}`);
     } else {
@@ -327,8 +331,8 @@ if (fechaClase.getTime() === hoy.getTime()) {
 
         if (!organized[slot.timeBlockId]) organized[slot.timeBlockId] = {};
 
-        // Si el slot tiene studentId null, en el frontend se verá como el botón (+) 
-        // gracias a tu lógica de: const hasStudent = !!slot?.student;
+        // Si el slot tiene studentId null, en el frontend se verÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ como el botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n (+) 
+        // gracias a tu lÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³gica de: const hasStudent = !!slot?.student;
         organized[slot.timeBlockId][slot.instructorId] = slot;
       });
 
@@ -355,7 +359,7 @@ if (fechaClase.getTime() === hoy.getTime()) {
     };
   }, [fetchData]);
 
-  // Determinar turno actual basado en la hora del día
+  // Determinar turno actual basado en la hora del dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­a
   const updateCurrentTurnByTime = () => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -367,9 +371,9 @@ if (fechaClase.getTime() === hoy.getTime()) {
     } else {
       // Fuera de horarios
       if (currentHour < turnConfig.matutino.start) {
-        setCurrentTurn('vespertino'); // Último turno del día anterior
+        setCurrentTurn('vespertino'); // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ltimo turno del dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­a anterior
       } else {
-        setCurrentTurn('matutino'); // Próximo turno del día siguiente
+        setCurrentTurn('matutino'); // PrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ximo turno del dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­a siguiente
       }
     }
   };
@@ -406,7 +410,7 @@ if (fechaClase.getTime() === hoy.getTime()) {
   };
 
   const liberarSlot = async (id) => {
-    if (!window.confirm('¿Liberar este horario?')) return;
+    if (!window.confirm('ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿Liberar este horario?')) return;
 
     await axios.put(`${API_BASE_URL}/slots/${id}/cancel`, {
       cancelReason: 'Liberado por administrador'
@@ -415,22 +419,28 @@ if (fechaClase.getTime() === hoy.getTime()) {
     fetchData();
   };
 
-  const buscarAlumnos = async (q) => {
+  const buscarAlumnos = (q) => {
     setStudentSearch(q);
 
-    if (!q || q.trim().length === 0) {
+    if (studentSearchTimeoutRef.current) {
+      clearTimeout(studentSearchTimeoutRef.current);
+    }
+
+    if (!q || q.trim().length < 2) {
       setStudents([]);
       return;
     }
 
-    try {
-      const res = await axios.get(`${API_BASE_URL}/slots/students/para-asignar`, {
-        params: { search: q }
-      });
-      setStudents(res.data.estudiantes);
-    } catch (error) {
-      setStudents([]);
-    }
+    studentSearchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/slots/students/para-asignar`, {
+          params: withBranchParams({ search: q.trim(), limit: 10, pageSize: 10 })
+        });
+        setStudents((res.data.estudiantes || []).slice(0, 10));
+      } catch (error) {
+        setStudents([]);
+      }
+    }, 300);
   };
 
 
@@ -475,10 +485,10 @@ if (fechaClase.getTime() === hoy.getTime()) {
 
       const response = await axios.post(
         `${API_BASE_URL}/slots/${replaceSlot.id}/reemplazar`,
-        payload
+        withBranchPayload(payload)
       );
 
-      showAlert('✅ Alumno reemplazado exitosamente');
+      showAlert('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Alumno reemplazado exitosamente');
       setReplaceSlot(null);
       setStudentSearch('');
       setStudents([]);
@@ -528,24 +538,31 @@ if (fechaClase.getTime() === hoy.getTime()) {
     setShowReservaModal(true);
   };
 
-  const buscarEstudiantesParaReserva = async (nombre) => {
+  const buscarEstudiantesParaReserva = (nombre) => {
+    if (reservaStudentSearchTimeoutRef.current) {
+      clearTimeout(reservaStudentSearchTimeoutRef.current);
+    }
+
     if (!nombre || nombre.trim().length < 2) {
       setEstudiantesEncontrados([]);
+      setBuscandoEstudiantes(false);
       return;
     }
 
     setBuscandoEstudiantes(true);
-    try {
-      const res = await axios.get(`${API_BASE_URL}/slots/students/para-asignar`, {
-        params: { search: nombre }
-      });
-      setEstudiantesEncontrados(res.data.estudiantes || []);
-    } catch (error) {
-      console.error('Error buscando estudiantes:', error);
-      setEstudiantesEncontrados([]);
-    } finally {
-      setBuscandoEstudiantes(false);
-    }
+    reservaStudentSearchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/slots/students/para-asignar`, {
+          params: withBranchParams({ search: nombre.trim(), limit: 10, pageSize: 10 })
+        });
+        setEstudiantesEncontrados((res.data.estudiantes || []).slice(0, 10));
+      } catch (error) {
+        console.error('Error buscando estudiantes:', error);
+        setEstudiantesEncontrados([]);
+      } finally {
+        setBuscandoEstudiantes(false);
+      }
+    }, 300);
   };
 
   const crearEstudianteYReservar = async () => {
@@ -556,13 +573,13 @@ if (fechaClase.getTime() === hoy.getTime()) {
 
     setCreandoEstudiante(true);
     try {
-      const estudianteResponse = await axios.post(`${API_BASE_URL}/students`, {
+      const estudianteResponse = await axios.post(`${API_BASE_URL}/students`, withBranchPayload({
         nombre: reservaData.nuevoEstudiante.nombre.trim(),
         edad: reservaData.nuevoEstudiante.edad ? parseInt(reservaData.nuevoEstudiante.edad) : null,
         telefonoContacto: reservaData.nuevoEstudiante.telefonoContacto?.trim() || null,
         nombreTutor: reservaData.nuevoEstudiante.nombreTutor?.trim() || null,
-        notas: `Estudiante de prueba creado automáticamente. ${reservaData.notas || ''}`
-      });
+        notas: `Estudiante de prueba creado automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ticamente. ${reservaData.notas || ''}`
+      }));
 
       const nuevoEstudianteId = estudianteResponse.data.id;
 
@@ -577,7 +594,7 @@ if (fechaClase.getTime() === hoy.getTime()) {
 
       const reservaResponse = await axios.post(`${API_BASE_URL}/slots/reservar`, reservaPayload);
 
-      showAlert('✅ Estudiante creado y clase de prueba reservada exitosamente');
+      showAlert('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Estudiante creado y clase de prueba reservada exitosamente');
       setShowReservaModal(false);
       fetchData();
 
@@ -594,12 +611,12 @@ if (fechaClase.getTime() === hoy.getTime()) {
   };
 
   const formatFechaSlot = (fechaString) => {
-  if (!fechaString) return 'Fecha inválida';
+  if (!fechaString) return 'Fecha invÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡lida';
   
   // Extraer solo YYYY-MM-DD del string
   const match = fechaString.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!match) {
-    // Intentar parsear como Date si no coincide el patrón
+    // Intentar parsear como Date si no coincide el patrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n
     const fecha = new Date(fechaString);
     const year = fecha.getFullYear();
     const month = fecha.getMonth();
@@ -613,7 +630,7 @@ if (fechaClase.getTime() === hoy.getTime()) {
     });
   }
   
-  // Crear fecha LOCAL con los componentes extraídos
+  // Crear fecha LOCAL con los componentes extraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­dos
   const [, year, month, day] = match;
   const fechaLocal = new Date(
     parseInt(year),
@@ -711,7 +728,7 @@ const extraerSoloFecha = (fechaString) => {
   const reservarSlot = async () => {
     if (reservaData.classType === 'P') {
       await crearEstudianteYReservar();
-      showAlert('✅ Estudiante creado y clase de prueba reservada exitosamente');
+      showAlert('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Estudiante creado y clase de prueba reservada exitosamente');
 
     } else {
       await reservarSlotConEstudianteExistente();
@@ -738,7 +755,7 @@ const extraerSoloFecha = (fechaString) => {
   };
 
   if (loading && !pool) {
-    return <div className="p-20">Cargando…</div>;
+    return <div className="p-20">CargandoÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦</div>;
   }
 
   const displayTimeBlocks = getDisplayTimeBlocks();
@@ -773,7 +790,7 @@ const extraerSoloFecha = (fechaString) => {
               {pool?.nombre}
             </h1>
 
-            {/* Botón para cambiar turno */}
+            {/* BotÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n para cambiar turno */}
             <button
               onClick={toggleTurn}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all hover:scale-105 ${turnConfig[currentTurn].color}`}
@@ -800,9 +817,9 @@ const extraerSoloFecha = (fechaString) => {
               <button
                 onClick={() => changeDay(-1)}
                 className="p-2 hover:bg-white rounded transition-colors"
-                title="Día anterior"
+                title="DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­a anterior"
               >
-                ◀
+                ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
               </button>
               <span className="font-bold px-3">
                 {currentDate.toLocaleDateString('es-ES', {
@@ -814,9 +831,9 @@ const extraerSoloFecha = (fechaString) => {
               <button
                 onClick={() => changeDay(1)}
                 className="p-2 hover:bg-white rounded transition-colors"
-                title="Día siguiente"
+                title="DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­a siguiente"
               >
-                ▶
+                ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¶
               </button>
             </div>
           </div>
@@ -827,7 +844,7 @@ const extraerSoloFecha = (fechaString) => {
           Mostrando horarios de {turnConfig[currentTurn].label} ({getTurnTimeLabel(currentTurn)})
           {displayTimeBlocks.length === 0 && (
             <span className="text-amber-600 ml-2">
-              • No hay horarios programados para este turno
+              ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ No hay horarios programados para este turno
             </span>
           )}
         </div>
@@ -953,7 +970,7 @@ const extraerSoloFecha = (fechaString) => {
                           <button
                             onClick={() => marcarNoVino(slot)}
                             className="material-icons-round text-red-500 hover:text-red-700"
-                            title="Marcar como no asistió"
+                            title="Marcar como no asistiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³"
                           >
                              <img 
                                 src="/close.png" 
@@ -978,7 +995,7 @@ const extraerSoloFecha = (fechaString) => {
                                 />
   </button>
   
-  {/* Menú desplegable */}
+  {/* MenÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âº desplegable */}
   {showMoveMenu === slot.id && (
     <div 
       className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50"
@@ -1041,7 +1058,7 @@ const extraerSoloFecha = (fechaString) => {
         Mover Clase
       </h2>
       
-      {/* Información actual */}
+      {/* InformaciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n actual */}
       <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -1113,7 +1130,7 @@ const extraerSoloFecha = (fechaString) => {
           </div>
           <p className="text-xs text-slate-500 mt-1">
             <span className="material-icons-round align-text-bottom text-xs">info</span>
-            Fecha mínima: {moveSlot.minDate} (mañana) • Máxima: {moveSlot.maxDateStr}
+            Fecha mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­nima: {moveSlot.minDate} (maÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±ana) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡xima: {moveSlot.maxDateStr}
           </p>
         </div>
         
@@ -1192,7 +1209,7 @@ const extraerSoloFecha = (fechaString) => {
           />
         </div>
         
-        {/* 🔥 SECCIÓN DE ERRORES (NUEVA) */}
+        {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ SECCIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N DE ERRORES (NUEVA) */}
         {errorMover && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg animate-pulse">
             <div className="flex items-start gap-3">
@@ -1276,7 +1293,7 @@ const extraerSoloFecha = (fechaString) => {
           >
             {moviendoClase ? (
               <>
-                <span className="animate-spin">⟳</span>
+                <span className="animate-spin">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³</span>
                 Moviendo...
               </>
             ) : (
@@ -1318,7 +1335,7 @@ const extraerSoloFecha = (fechaString) => {
                 Tipo de clase
               </label>
               <div className="flex gap-2">
-                {tipos.map(tipo => (
+                {tiposReservaDirecta.map(tipo => (
                   <button
                     key={tipo.l}
                     onClick={() => {
@@ -1341,7 +1358,7 @@ const extraerSoloFecha = (fechaString) => {
                 <span className={`ml-1 px-2 py-1 rounded text-xs ${tipos.find(t => t.l === replaceSlot.classType)?.c}`}>
                   {replaceSlot.classType === 'P' ? 'Clase prueba' :
                     replaceSlot.classType === 'C' ? 'Clase suelta' :
-                      replaceSlot.classType === 'R' ? 'Reposición' : 'Clase fija'}
+                      replaceSlot.classType === 'R' ? 'Reposicion' : 'Clase fija'}
                 </span>
               </p>
             </div>
@@ -1383,7 +1400,7 @@ const extraerSoloFecha = (fechaString) => {
                     />
                     <input
                       type="tel"
-                      placeholder="Teléfono contacto"
+                      placeholder="TelÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©fono contacto"
                       className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={replaceSlot.nuevoEstudianteTelefono || ''}
                       onChange={(e) => {
@@ -1487,8 +1504,8 @@ const extraerSoloFecha = (fechaString) => {
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Tipo de clase
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                {tipos.map(tipo => (
+              <div className="grid grid-cols-3 gap-2">
+                {tiposReservaDirecta.map(tipo => (
                   <button
                     key={tipo.l}
                     type="button"
@@ -1550,7 +1567,7 @@ const extraerSoloFecha = (fechaString) => {
                     />
                     <input
                       type="tel"
-                      placeholder="Teléfono contacto"
+                      placeholder="TelÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©fono contacto"
                       value={reservaData.nuevoEstudiante.telefonoContacto}
                       onChange={(e) => setReservaData({
                         ...reservaData,
@@ -1623,7 +1640,7 @@ const extraerSoloFecha = (fechaString) => {
 
                 {reservaData.studentId && (
                   <p className="text-sm text-green-600 mt-2">
-                    ✓ Estudiante seleccionado
+                    ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ Estudiante seleccionado
                   </p>
                 )}
 
@@ -1677,7 +1694,7 @@ const extraerSoloFecha = (fechaString) => {
               >
                 {reservando || creandoEstudiante ? (
                   <span className="flex items-center gap-2">
-                    <span className="animate-spin">⟳</span>
+                    <span className="animate-spin">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³</span>
                     {creandoEstudiante ? 'Creando estudiante...' : 'Reservando...'}
                   </span>
                 ) : (
