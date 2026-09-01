@@ -48,5 +48,8 @@
                             "postcss":  "^8.5.6",
                             "tailwindcss":  "^3.4.19"
                         },
-    "proxy":  "https://kinder-swim.odooerp.one"
+    "proxy":  "https://kinder-swim.odooerp.one",
+    "engines": {
+        "node": ">=20"
+    }
 }
