@@ -35,6 +35,7 @@ export default function PoolScreen() {
     notas: '',
     // Campos para estudiante existente
     studentId: '',
+    selectedStudent: null,
     // Campos para estudiante nuevo (prueba)
     nuevoEstudiante: {
       nombre: '',
@@ -48,6 +49,10 @@ export default function PoolScreen() {
   const [estudiantesEncontrados, setEstudiantesEncontrados] = useState([]);
   const [reservando, setReservando] = useState(false);
   const [creandoEstudiante, setCreandoEstudiante] = useState(false);
+  const [claseSueltaQuote, setClaseSueltaQuote] = useState(null);
+  const [cargandoClaseSueltaQuote, setCargandoClaseSueltaQuote] = useState(false);
+  const [claseSueltaQuoteError, setClaseSueltaQuoteError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
 
 
   const [moveSlot, setMoveSlot] = useState(null);
@@ -504,6 +509,24 @@ if (fechaClase.getTime() === hoy.getTime()) {
     }
   };
 
+  const cargarCotizacionClaseSuelta = async () => {
+    setCargandoClaseSueltaQuote(true);
+    setClaseSueltaQuoteError('');
+    setClaseSueltaQuote(null);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/slots/clase-suelta/quote`, {
+        params: withBranchParams({})
+      });
+      setClaseSueltaQuote(response.data);
+    } catch (error) {
+      console.error('Error cargando precio de clase suelta:', error);
+      const message = error.response?.data?.detail || error.response?.data?.error || 'No se pudo cargar el precio de clase suelta';
+      setClaseSueltaQuoteError(message);
+    } finally {
+      setCargandoClaseSueltaQuote(false);
+    }
+  };
+
   const abrirModalReserva = (instructorId, timeBlockId, instructorNombre, hora) => {
     const fecha = currentDate.toLocaleDateString('en-CA').split('T')[0];
 
@@ -525,6 +548,7 @@ if (fechaClase.getTime() === hoy.getTime()) {
       classType: 'C',
       notas: '',
       studentId: '',
+      selectedStudent: null,
       nuevoEstudiante: {
         nombre: '',
         edad: '',
@@ -533,6 +557,8 @@ if (fechaClase.getTime() === hoy.getTime()) {
         email: ''
       }
     });
+    setPaymentMethod('cash');
+    cargarCotizacionClaseSuelta();
 
     setEstudiantesEncontrados([]);
     setShowReservaModal(true);
@@ -707,7 +733,24 @@ const extraerSoloFecha = (fechaString) => {
         notas: reservaData.notas
       };
 
-      const response = await axios.post(`${API_BASE_URL}/slots/reservar`, payload);
+      let response;
+      if (reservaData.classType === 'C') {
+        if (!claseSueltaQuote) {
+          showAlert('No se pudo cargar el precio de clase suelta');
+          return;
+        }
+        response = await axios.post(
+          `${API_BASE_URL}/slots/reservar-clase-suelta-pagada`,
+          withBranchPayload({
+            ...payload,
+            productId: claseSueltaQuote.product_id,
+            amount: claseSueltaQuote.amount ?? claseSueltaQuote.price_unit,
+            paymentMethod
+          })
+        );
+      } else {
+        response = await axios.post(`${API_BASE_URL}/slots/reservar`, withBranchPayload(payload));
+      }
 
       showAlert(response.data.message || 'Clase reservada exitosamente');
       setShowReservaModal(false);
@@ -715,8 +758,9 @@ const extraerSoloFecha = (fechaString) => {
 
     } catch (error) {
       console.error('Error reservando slot:', error);
-      if (error.response?.data?.error) {
-        showAlert(`Error: ${error.response.data.error}`);
+      const apiMessage = error.response?.data?.detail || error.response?.data?.error;
+      if (apiMessage) {
+        showAlert(`Error: ${apiMessage}`);
       } else {
         showAlert('Error al reservar la clase. Intenta de nuevo.');
       }
@@ -736,9 +780,20 @@ const extraerSoloFecha = (fechaString) => {
   };
 
   const handleClassTypeChange = (newClassType) => {
+    if (newClassType === reservaData.classType) {
+      return;
+    }
+    if (newClassType === 'C') {
+      cargarCotizacionClaseSuelta();
+    } else {
+      setClaseSueltaQuote(null);
+      setClaseSueltaQuoteError('');
+    }
     setReservaData(prev => ({
       ...prev,
       classType: newClassType,
+      selectedStudent: null,
+      studentId: '',
       ...(newClassType !== 'P' && {
         nuevoEstudiante: {
           nombre: '',
@@ -1626,7 +1681,8 @@ const extraerSoloFecha = (fechaString) => {
                           }`}
                         onClick={() => setReservaData({
                           ...reservaData,
-                          studentId: estudiante.id
+                          studentId: estudiante.id,
+                          selectedStudent: estudiante
                         })}
                       >
                         <div className="font-medium">{estudiante.nombre}</div>
@@ -1648,6 +1704,66 @@ const extraerSoloFecha = (fechaString) => {
                   <p className="text-sm text-red-500 mt-2">
                     * Debes seleccionar un estudiante
                   </p>
+                )}
+
+                {reservaData.classType === 'C' && (
+                  <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-emerald-700 font-bold">Cobro presencial</p>
+                        <p className="text-sm text-slate-600">Confirmar solo cuando el pago ya fue recibido.</p>
+                      </div>
+                      <span className="material-icons-round text-emerald-600">point_of_sale</span>
+                    </div>
+
+                    {cargandoClaseSueltaQuote && (
+                      <p className="text-sm text-slate-500">Cargando precio desde Odoo...</p>
+                    )}
+
+                    {claseSueltaQuoteError && (
+                      <p className="text-sm text-red-600">{claseSueltaQuoteError}</p>
+                    )}
+
+                    {claseSueltaQuote && (
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between gap-3">
+                          <span className="text-slate-500">Cliente</span>
+                          <span className="font-semibold text-right">
+                            {reservaData.selectedStudent?.nombre || reservaData.selectedStudent?.name || 'Selecciona estudiante'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-slate-500">Concepto</span>
+                          <span className="font-semibold text-right">{claseSueltaQuote.concept}</span>
+                        </div>
+                        <div className="flex justify-between gap-3 items-center">
+                          <span className="text-slate-500">Total</span>
+                          <span className="font-black text-lg text-emerald-700">
+                            ${Number(claseSueltaQuote.amount || 0).toFixed(2)} {claseSueltaQuote.currency || ''}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-2">Metodo de pago</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('cash')}
+                              className={`py-2 rounded-lg text-sm font-semibold ${paymentMethod === 'cash' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}
+                            >
+                              Efectivo
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentMethod('card')}
+                              className={`py-2 rounded-lg text-sm font-semibold ${paymentMethod === 'card' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}
+                            >
+                              Tarjeta
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -1683,11 +1799,13 @@ const extraerSoloFecha = (fechaString) => {
                   reservando ||
                   creandoEstudiante ||
                   (reservaData.classType === 'P' && !reservaData.nuevoEstudiante.nombre.trim()) ||
-                  (reservaData.classType !== 'P' && !reservaData.studentId)
+                  (reservaData.classType !== 'P' && !reservaData.studentId) ||
+                  (reservaData.classType === 'C' && (cargandoClaseSueltaQuote || !claseSueltaQuote))
                 }
                 className={`px-4 py-2 rounded-lg font-medium ${reservando || creandoEstudiante ||
                     (reservaData.classType === 'P' && !reservaData.nuevoEstudiante.nombre.trim()) ||
-                    (reservaData.classType !== 'P' && !reservaData.studentId)
+                    (reservaData.classType !== 'P' && !reservaData.studentId) ||
+                    (reservaData.classType === 'C' && (cargandoClaseSueltaQuote || !claseSueltaQuote))
                     ? 'bg-blue-300 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
@@ -1698,7 +1816,7 @@ const extraerSoloFecha = (fechaString) => {
                     {creandoEstudiante ? 'Creando estudiante...' : 'Reservando...'}
                   </span>
                 ) : (
-                  `Reservar ${reservaData.classType === 'P' ? 'Clase de Prueba' : 'Clase'}`
+                  reservaData.classType === 'C' ? 'Confirmar pago' : `Reservar ${reservaData.classType === 'P' ? 'Clase de Prueba' : 'Clase'}`
                 )}
               </button>
             </div>

@@ -1,20 +1,749 @@
 
 > contador-segundos@0.1.0 start
-> set PORT=3001 && react-scripts start
+> node scripts/start-scoped.js --branch=pruebas
+
+Attempting to bind to HOST environment variable: 0.0.0.0
+If this was unintentional, check that you haven't mistakenly set it in your shell.
+Learn more here: https://cra.link/advanced-config
 
 Starting the development server...
 
-Compiled successfully!
+Compiled with warnings.
 
-You can now view contador-segundos in the browser.
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
 
-  Local:            http://localhost:3001
-  On Your Network:  http://192.168.56.1:3001
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-Note that the development build is not optimized.
-To create a production build, use npm run build.
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-webpack compiled [1m[32msuccessfully[39m[22m
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\config.js
+  Line 1:1:  Unexpected Unicode BOM (Byte Order Mark)  unicode-bom
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\config.js
+  Line 1:1:  Unexpected Unicode BOM (Byte Order Mark)  unicode-bom
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
 Compiling...
-Compiled successfully!
-webpack compiled [1m[32msuccessfully[39m[22m
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 340:9:  'selectedStudentHasOpenPackage' is assigned a value but never used                                            no-unused-vars
+  Line 343:9:  'openPackageStateLabels' is assigned a value but never used                                                   no-unused-vars
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 340:9:  'selectedStudentHasOpenPackage' is assigned a value but never used                                            no-unused-vars
+  Line 343:9:  'openPackageStateLabels' is assigned a value but never used                                                   no-unused-vars
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src\components\cruds\InstructorsCRUD.jsx
+  Line 23:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 43:9:  'fetchPools' is assigned a value but never used                                                               no-unused-vars
+
+src\components\cruds\PoolsCRUD.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fetchPools'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\RecurringSlotsCRUD.jsx
+  Line 13:10:  'pools' is assigned a value but never used                                                                    no-unused-vars
+  Line 94:6:   React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\cruds\TimeBlocksCRUD.jsx
+  Line 9:7:  'extractHHMM' is assigned a value but never used  no-unused-vars
+
+src\routes\PoolScreen.jsx
+  Line 66:12:   'buscandoInstructores' is assigned a value but never used                                                                   no-unused-vars
+  Line 66:34:   'setBuscandoInstructores' is assigned a value but never used                                                                no-unused-vars
+  Line 365:6:   React Hook useEffect has a missing dependency: 'updateCurrentTurnByTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 417:9:   'liberarSlot' is assigned a value but never used                                                                            no-unused-vars
+  Line 491:13:  'response' is assigned a value but never used                                                                               no-unused-vars
+  Line 621:13:  'reservaResponse' is assigned a value but never used                                                                        no-unused-vars
+  Line 674:7:   'getFechaYYYYMMDD' is assigned a value but never used                                                                       no-unused-vars
+  Line 691:7:   'fechaYaPaso' is assigned a value but never used                                                                            no-unused-vars
+
+src\routes\PoolScreenView.jsx
+  Line 14:10:  'lastUpdate' is assigned a value but never used                                                                                             no-unused-vars
+  Line 18:21:  'setRowHeight' is assigned a value but never used                                                                                           no-unused-vars
+  Line 20:9:   'rowHeightClasses' is assigned a value but never used                                                                                       no-unused-vars
+  Line 78:9:   'getTipoClaseInfo' is assigned a value but never used                                                                                       no-unused-vars
+  Line 167:6:  React Hook useEffect has missing dependencies: 'fetchPoolData' and 'updateCurrentTurn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 294:9:  'getRowClass' is assigned a value but never used                                                                                            no-unused-vars
+
+webpack compiled with 1 warning

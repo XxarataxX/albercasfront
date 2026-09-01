@@ -82,6 +82,26 @@ export default function StudentsCRUD() {
     fetchStudents(nextPage, pagination.pageSize);
   };
 
+  const packageStateLabels = {
+    initial_payment_pending: 'Primer pago pendiente',
+    active: 'Activo',
+    renewal_pending: 'Renovacion pendiente',
+    overdue_first_surcharge: '1er recargo',
+    overdue_second_surcharge: '2do recargo',
+    cancelled: 'Cancelado'
+  };
+
+  const packageStateClasses = {
+    initial_payment_pending: 'bg-yellow-100 text-yellow-800',
+    active: 'bg-emerald-100 text-emerald-800',
+    renewal_pending: 'bg-blue-100 text-blue-800',
+    overdue_first_surcharge: 'bg-orange-100 text-orange-800',
+    overdue_second_surcharge: 'bg-red-100 text-red-800',
+    cancelled: 'bg-gray-100 text-gray-700'
+  };
+
+  const getOpenPackagePeriod = (student) => student.openPackagePeriod || student.open_package_period || null;
+
   const handleDelete = async (id) => {
     if (!window.confirm('Ãƒâ€šÃ‚Â¿EstÃƒÆ’Ã‚Â¡ seguro de eliminar este estudiante?')) return;
     
@@ -394,6 +414,7 @@ const handleConfirmAction = async () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Edad</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contacto</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tutor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paquete</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
@@ -430,6 +451,25 @@ const handleConfirmAction = async () => {
                       <div className="text-sm text-gray-700">
                         {student.nombreTutor || 'Sin tutor'}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {getOpenPackagePeriod(student) ? (
+                        <div className="space-y-1">
+                          <div className="text-sm font-semibold text-gray-800">
+                            {getOpenPackagePeriod(student).package_label || 'Paquete mensual'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {getOpenPackagePeriod(student).invoice_name || 'Sin factura'}
+                          </div>
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                            packageStateClasses[getOpenPackagePeriod(student).state] || 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {packageStateLabels[getOpenPackagePeriod(student).state] || getOpenPackagePeriod(student).state || 'Pendiente'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">Sin paquete</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${

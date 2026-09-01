@@ -16,6 +16,7 @@ export default function RecurringSlotsCRUD() {
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(true); // <-- Nuevo estado para mostrar/ocultar filtros
   const [selectedPackage, setSelectedPackage] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
 
    const [alert, setAlert] = useState({
   message: '',
@@ -49,7 +50,7 @@ export default function RecurringSlotsCRUD() {
     studentId: '',
     timeBlockId: '',
     poolId: '',
-    classType: 'C',
+    classType: 'F',
     startDate: new Date().toLocaleDateString('en-CA').split('T')[0],
     duration: 30,
     daysOfWeek: [],
@@ -64,9 +65,9 @@ export default function RecurringSlotsCRUD() {
   ];
 
   const monthlyPackages = [
-    { value: '1', label: '1 vez por semana', price: '$1,650', sessions: '4 clases aprox.' },
-    { value: '2', label: '2 veces por semana', price: '$2,650', sessions: '8 clases aprox.' },
-    { value: '3', label: '3 veces por semana', price: '$3,340', sessions: '12 clases aprox.' }
+    { value: '1', label: '1 vez por semana', price: '$1,650', amount: 1650, sessions: '4 clases aprox.' },
+    { value: '2', label: '2 veces por semana', price: '$2,650', amount: 2650, sessions: '8 clases aprox.' },
+    { value: '3', label: '3 veces por semana', price: '$3,340', amount: 3340, sessions: '12 clases aprox.' }
   ];
 
   const statusOptions = [
@@ -234,9 +235,20 @@ export default function RecurringSlotsCRUD() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const student = students.find(s => String(s.id) === String(formData.studentId));
+    const period = student?.openPackagePeriod || student?.open_package_period;
+    if (period || student?.hasOpenPackagePeriod || student?.has_open_package_period) {
+      showAlert(`Este alumno ya tiene una mensualidad vigente o pendiente (${period?.invoice_name || 'factura pendiente'}). No puedes crear otro paquete.`);
+      return;
+    }
     
     if (formData.daysOfWeek.length === 0) {
       showAlert('Por favor selecciona al menos un dia de la semana');
+      return;
+    }
+    if (!selectedPackage) {
+      showAlert('Por favor selecciona un paquete mensual');
       return;
     }
     
@@ -244,10 +256,15 @@ export default function RecurringSlotsCRUD() {
       setFormLoading(true);
       
       const endDate = getEndDate();
+      const packageOption = monthlyPackages.find(option => option.value === selectedPackage);
       const dataToSend = {
         ...formData,
         endDate,
-        duration: parseInt(formData.duration)
+        duration: parseInt(formData.duration),
+        classType: 'F',
+        packageCode: selectedPackage,
+        packageAmount: packageOption?.amount,
+        paymentMethod
       };
       
       const response = await recurringSlotService.createRecurring(dataToSend);
@@ -263,7 +280,7 @@ export default function RecurringSlotsCRUD() {
       resetForm();
     } catch (error) {
       console.error('Error al crear slots recurrentes:', error);
-      showAlert('Error al crear los slots: ' + (error.response?.data?.error || error.message));
+      showAlert('Error al crear los slots: ' + (error.response?.data?.detail || error.response?.data?.error || error.message));
     } finally {
       setFormLoading(false);
     }
@@ -275,13 +292,14 @@ export default function RecurringSlotsCRUD() {
       studentId: '',
       timeBlockId: '',
       poolId: '',
-      classType: 'C',
+      classType: 'F',
       startDate: new Date().toLocaleDateString('en-CA').split('T')[0],
       duration: 30,
       daysOfWeek: [],
       notas: ''
     });
     setSelectedPackage('');
+    setPaymentMethod('cash');
     setShowForm(false);
   };
 
@@ -316,6 +334,19 @@ export default function RecurringSlotsCRUD() {
     alertTimeoutRef.current = null;
   }, 4000);
 };
+
+  const selectedStudent = students.find(s => String(s.id) === String(formData.studentId));
+  const openPackagePeriod = selectedStudent?.openPackagePeriod || selectedStudent?.open_package_period;
+  const selectedStudentHasOpenPackage = Boolean(
+    openPackagePeriod || selectedStudent?.hasOpenPackagePeriod || selectedStudent?.has_open_package_period
+  );
+  const openPackageStateLabels = {
+    initial_payment_pending: 'Primer pago pendiente',
+    active: 'Activo',
+    renewal_pending: 'Renovacion pendiente',
+    overdue_first_surcharge: 'Vencido con primer recargo',
+    overdue_second_surcharge: 'Vencido con segundo recargo',
+  };
 
 
   return (
@@ -562,10 +593,24 @@ export default function RecurringSlotsCRUD() {
                 <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
                   <div className="text-xs uppercase tracking-wide text-blue-700 font-semibold">Alumno seleccionado</div>
                   <div className="mt-1 text-sm font-medium text-gray-900">
-                    {formData.studentId ? students.find(s => s.id === formData.studentId)?.nombre : 'Pendiente'}
+                    {formData.studentId ? selectedStudent?.nombre : 'Pendiente'}
                   </div>
                 </div>
               </div>
+
+              {selectedStudentHasOpenPackage && (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <div className="font-semibold">Este alumno ya tiene una mensualidad vigente o pendiente.</div>
+                  <div className="mt-1">
+                    Periodo: {openPackagePeriod?.package_label || 'Paquete mensual'} · Estado:{' '}
+                    {openPackageStateLabels[openPackagePeriod?.state] || openPackagePeriod?.state || 'Pendiente'} · Factura:{' '}
+                    {openPackagePeriod?.invoice_name || 'sin factura'}
+                  </div>
+                  <div className="mt-1 text-amber-800">
+                    No se puede crear otro paquete hasta cerrar, cancelar o resolver el periodo actual.
+                  </div>
+                </div>
+              )}
             </section>
 
             <section className="bg-white border border-gray-200 rounded-lg p-4">
@@ -594,6 +639,39 @@ export default function RecurringSlotsCRUD() {
                     <div className="text-xs text-gray-500 mt-1">{option.sessions}</div>
                   </button>
                 ))}
+              </div>
+
+              <div className="mt-4 border-t border-blue-100 pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pago del primer periodo *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+                      paymentMethod === 'cash'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-200'
+                    }`}
+                  >
+                    Efectivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('card')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+                      paymentMethod === 'card'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-200'
+                    }`}
+                  >
+                    Tarjeta
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  El horario se crea solo si la factura del primer periodo queda pagada.
+                </p>
               </div>
             </section>
 
@@ -650,18 +728,9 @@ export default function RecurringSlotsCRUD() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Tipo de clase *
                   </label>
-                  <select
-                    value={formData.classType}
-                    onChange={(e) => setFormData({...formData, classType: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    required
-                  >
-                    {classTypes.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-full px-3 py-2 border rounded-lg bg-blue-50 text-blue-800 font-semibold">
+                    Clase Fija
+                  </div>
                 </div>
 
                 <div>
@@ -737,11 +806,17 @@ export default function RecurringSlotsCRUD() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="font-medium">Alumno:</span>{' '}
-                  {formData.studentId ? students.find(s => s.id === formData.studentId)?.nombre : 'No seleccionado'}
+                  {formData.studentId ? selectedStudent?.nombre : 'No seleccionado'}
                 </div>
                 <div>
                   <span className="font-medium">Paquete:</span>{' '}
                   {selectedPackage ? monthlyPackages.find(option => option.value === selectedPackage)?.label : 'No seleccionado'}
+                </div>
+                <div>
+                  <span className="font-medium">Cobro inicial:</span>{' '}
+                  {selectedPackage
+                    ? `${monthlyPackages.find(option => option.value === selectedPackage)?.price} - ${paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta'}`
+                    : 'Pendiente'}
                 </div>
                 <div>
                   <span className="font-medium">Instructor:</span>{' '}
@@ -774,8 +849,12 @@ export default function RecurringSlotsCRUD() {
               </button>
               <button
                 type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg flex items-center justify-center gap-2"
-                disabled={formLoading}
+                className={`px-5 py-2 rounded-lg flex items-center justify-center gap-2 text-white ${
+                  selectedStudentHasOpenPackage
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+                disabled={formLoading || selectedStudentHasOpenPackage}
               >
                 {formLoading ? (
                   <>
