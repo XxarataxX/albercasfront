@@ -1,4 +1,6 @@
 const rawArgs = process.argv.slice(2);
+const fs = require('fs');
+const path = require('path');
 
 const flagArg = rawArgs.find((arg) => arg.startsWith('--') && arg !== '--');
 const branchArg = rawArgs.find((arg) => arg.startsWith('--branch='));
@@ -27,5 +29,13 @@ if (branchScope) {
   process.env.REACT_APP_BRANCH_SCOPE = branchScope;
 }
 
-require('react-scripts/scripts/start');
+const hasBuild = fs.existsSync(path.resolve(__dirname, '..', 'build', 'index.html'));
+const explicitPort = Boolean(process.env.PORT);
+const productionStart = process.env.NODE_ENV === 'production' || (hasBuild && explicitPort && process.env.PORT !== '3001');
 
+if (productionStart) {
+  require('./serve-build');
+  return;
+}
+
+require('react-scripts/scripts/start');
