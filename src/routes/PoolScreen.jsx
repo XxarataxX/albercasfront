@@ -173,6 +173,47 @@ export default function PoolScreen() {
   setShowMoveMenu(null);
 };
 
+const abrirModalReemplazarClase = async (slot) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toLocaleDateString('en-CA').split('T')[0];
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 30);
+  const maxDateStr = maxDate.toLocaleDateString('en-CA').split('T')[0];
+  let replacementSummary = null;
+
+  try {
+    const studentId = slot.student?.id || slot.studentId || slot.partnerId;
+    if (studentId) {
+      const response = await axios.get(`${API_BASE_URL}/students/${studentId}/open-package-replacements`);
+      replacementSummary = response.data;
+    }
+  } catch (error) {
+    replacementSummary = { error: error.response?.data?.detail || 'No se pudo consultar reposiciones disponibles' };
+  }
+
+  setMoveSlot({
+    ...slot,
+    replacementMode: true,
+    minDate: todayStr,
+    maxDateStr,
+    replacementSummary
+  });
+
+  cargarInstructoresDisponibles();
+  cargarTimeBlocksDisponibles();
+
+  setMoveData({
+    nuevaFecha: todayStr,
+    nuevoTimeBlockId: '',
+    nuevoInstructorId: '',
+    motivo: '',
+    notas: ''
+  });
+
+  setShowMoveMenu(null);
+};
+
 // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ FUNCIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N: Cargar instructores disponibles
 const cargarInstructoresDisponibles = async () => {
   try {
@@ -203,99 +244,65 @@ const moverClase = async () => {
 
   setErrorMover('');
 
-    const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0); // Solo fecha, sin hora
-
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
   const fechaClase = extraerSoloFecha(moveSlot.fecha);
 
-  console.log('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â DEBUG FECHAS VALIDACIÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“N:', {
-    hoy: hoy.toISOString(),
-    fechaClase: fechaClase.toISOString(),
-    fechaClaseDisplay: formatFechaSlot(moveSlot.fecha)
-  });
-
-  if (fechaClase < hoy) {
+  if (!moveSlot.replacementMode && fechaClase < hoy) {
     const fechaDisplay = formatFechaSlot(moveSlot.fecha);
-    const errorMsg = `ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Esta clase fue el ${fechaDisplay}. No se puede mover una clase que ya pasÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³.`;
+    const errorMsg = `Esta clase fue el ${fechaDisplay}. No se puede mover una clase que ya paso.`;
     setErrorMover(errorMsg);
     showAlert(errorMsg, 'error');
     return;
   }
 
-if (fechaClase.getTime() === hoy.getTime()) {
-    // Obtener la hora actual LOCAL
+  if (!moveSlot.replacementMode && fechaClase.getTime() === hoy.getTime()) {
     const ahora = new Date();
-    const horaActual = ahora.getHours();
-    const minutoActual = ahora.getMinutes();
-    
-    // Obtener la hora de inicio de la clase
+    const tiempoActual = ahora.getHours() * 60 + ahora.getMinutes();
     const horaClaseStr = moveSlot.timeBlock?.horaInicio || '00:00';
     const [horaClase, minutoClase] = horaClaseStr.split(':').map(Number);
-    
-    // Calcular tiempos en minutos para comparar
-    const tiempoActual = horaActual * 60 + minutoActual;
     const tiempoClase = horaClase * 60 + minutoClase;
-    
-    console.log('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â DEBUG HORA:', {
-      horaActual,
-      minutoActual,
-      horaClase,
-      minutoClase,
-      tiempoActual,
-      tiempoClase,
-      diferencia: tiempoActual - tiempoClase
-    });
-    
-    // Si ya pasÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ la hora de la clase (con margen de 5 minutos)
     if (tiempoActual > tiempoClase + 5) {
-      const errorMsg = `ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Esta clase comenzÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ a las ${horaClaseStr}. No se puede mover una clase que ya estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ en curso o terminÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³.`;
+      const errorMsg = `Esta clase comenzo a las ${horaClaseStr}. No se puede mover una clase que ya esta en curso o termino.`;
       setErrorMover(errorMsg);
       showAlert(errorMsg, 'error');
       return;
     }
-}
-  
-  
-  // Validar que haya al menos un cambio
+  }
+
   if (!moveData.nuevaFecha && !moveData.nuevoTimeBlockId && !moveData.nuevoInstructorId) {
-    const errorMsg = 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Debes seleccionar al menos un cambio: fecha, horario o instructor';
+    const errorMsg = 'Debes seleccionar al menos un cambio: fecha, horario o instructor';
     setErrorMover(errorMsg);
     return;
   }
-  
 
-  
   try {
     setMoviendoClase(true);
-    
+
     const payload = {
       ...moveData,
       nuevaFecha: moveData.nuevaFecha || undefined,
       nuevoTimeBlockId: moveData.nuevoTimeBlockId || undefined,
       nuevoInstructorId: moveData.nuevoInstructorId || undefined,
-      motivo: '',
       notas: moveData.notas?.trim() || ''
     };
 
-    delete payload.motivo;
-    
-    console.log('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ Moviendo clase con payload:', payload);
-    
-    const response = await axios.post(
-      `${API_BASE_URL}/slots/${moveSlot.id}/move`,
-      payload
-    );
-    
-    showAlert(response.data.message || 'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ Clase movida exitosamente');
+    const endpoint = moveSlot.replacementMode
+      ? `${API_BASE_URL}/slots/${moveSlot.id}/schedule-replacement`
+      : `${API_BASE_URL}/slots/${moveSlot.id}/move`;
+    const response = await axios.post(endpoint, payload);
+
+    showAlert(response.data.message || (moveSlot.replacementMode ? 'Reemplazo programado exitosamente' : 'Clase movida exitosamente'));
     setMoveSlot(null);
     fetchData();
-    
   } catch (error) {
-    console.error('ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Error moviendo clase:', error);
-    if (error.response?.data?.error) {
-      showAlert(`Error: ${error.response.data.error}`);
+    console.error('Error moviendo/reemplazando clase:', error);
+    const detail = error.response?.data?.detail || error.response?.data?.error;
+    if (detail) {
+      showAlert(`Error: ${detail}`);
+      setErrorMover(detail);
     } else {
-      showAlert('Error al mover la clase. Intenta de nuevo.');
+      showAlert(moveSlot.replacementMode ? 'Error al programar el reemplazo. Intenta de nuevo.' : 'Error al mover la clase. Intenta de nuevo.');
     }
   } finally {
     setMoviendoClase(false);
@@ -701,6 +708,11 @@ const fechaYaPaso = (fechaString) => {
   return fechaSlot < hoy;
 };
 
+
+const puedeProgramarReemplazo = (slot) => {
+  return slot?.status === 'no_vino' && fechaYaPaso(slot.fecha);
+};
+
 // Extraer solo fecha (sin hora) de un string
 const extraerSoloFecha = (fechaString) => {
   if (!fechaString) return new Date();
@@ -779,11 +791,82 @@ const extraerSoloFecha = (fechaString) => {
     }
   };
 
+  const reservarClaseConPagoPendiente = async () => {
+    if (!['C', 'P'].includes(reservaData.classType)) {
+      showAlert('El pago pendiente solo aplica para clase suelta o clase de prueba');
+      return;
+    }
+    if (!claseSueltaQuote) {
+      showAlert('No se pudo cargar el precio para generar la liga');
+      return;
+    }
+    if (reservaData.classType === 'P' && !reservaData.nuevoEstudiante.nombre.trim()) {
+      showAlert('Por favor ingresa el nombre del estudiante de prueba');
+      return;
+    }
+    if (reservaData.classType !== 'P' && !reservaData.studentId) {
+      showAlert('Por favor selecciona un estudiante');
+      return;
+    }
+
+    setReservando(true);
+    setCreandoEstudiante(reservaData.classType === 'P');
+    try {
+      let studentId = reservaData.studentId;
+      if (reservaData.classType === 'P') {
+        const estudianteResponse = await axios.post(`${API_BASE_URL}/students`, withBranchPayload({
+          nombre: reservaData.nuevoEstudiante.nombre.trim(),
+          edad: reservaData.nuevoEstudiante.edad ? parseInt(reservaData.nuevoEstudiante.edad) : null,
+          telefonoContacto: reservaData.nuevoEstudiante.telefonoContacto?.trim() || null,
+          nombreTutor: reservaData.nuevoEstudiante.nombreTutor?.trim() || null,
+          notas: `Estudiante de prueba creado para pago pendiente. ${reservaData.notas || ''}`
+        }));
+        studentId = estudianteResponse.data.id;
+      }
+
+      const payload = {
+        fecha: selectedSlotInfo.fecha,
+        instructorId: selectedSlotInfo.instructorId,
+        timeBlockId: selectedSlotInfo.timeBlockId,
+        studentId,
+        classType: reservaData.classType,
+        notas: reservaData.classType === 'P'
+          ? `Clase de prueba con pago pendiente - ${reservaData.notas || ''}`
+          : reservaData.notas,
+        productId: claseSueltaQuote.product_id,
+        amount: claseSueltaQuote.amount ?? claseSueltaQuote.price_unit,
+        holdHours: 24
+      };
+
+      const response = await axios.post(
+        `${API_BASE_URL}/slots/reservar-clase-pendiente`,
+        withBranchPayload(payload)
+      );
+      const paymentUrl = response.data?.payment_url || response.data?.slot?.payment_url;
+      const invoiceName = response.data?.invoice_name || response.data?.slot?.invoice_name || 'factura pendiente';
+      showAlert(
+        paymentUrl
+          ? `Clase apartada 24 horas. ${invoiceName}. Liga de pago: ${paymentUrl}`
+          : `Clase apartada 24 horas. ${invoiceName}.`,
+        'success'
+      );
+      setShowReservaModal(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error apartando clase con pago pendiente:', error);
+      const apiMessage = error.response?.data?.detail || error.response?.data?.error;
+      showAlert(apiMessage ? `Error: ${apiMessage}` : 'Error al apartar la clase con pago pendiente.');
+    } finally {
+      setReservando(false);
+      setCreandoEstudiante(false);
+    }
+  };
+
   const handleClassTypeChange = (newClassType) => {
     if (newClassType === reservaData.classType) {
       return;
     }
-    if (newClassType === 'C') {
+    if (newClassType === 'C' || newClassType === 'P') {
       cargarCotizacionClaseSuelta();
     } else {
       setClaseSueltaQuote(null);
@@ -1056,41 +1139,59 @@ const extraerSoloFecha = (fechaString) => {
       className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50"
       onClick={(e) => e.stopPropagation()}
     >
-      <button
-        onClick={() => {
-          setReplaceSlot(slot);
-          setShowMoveMenu(null);
-        }}
-        className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-sm"
-      >
-              <img 
-                                src="/user.png" 
-                                alt="user"
-                                className="w-4 h-4 object-cover"
-                                />
-        <div>
-          <div className="font-medium">Reemplazar alumno</div>
-          <div className="text-xs text-slate-500">Cambiar estudiante en este horario</div>
-        </div>
-      </button>
-      
-      <div className="border-t border-slate-100"></div>
-      
-      <button
-        onClick={() => abrirModalMoverClase(slot)}
-        className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-sm"
-      >
-          <img 
-                                src="/calendar.png" 
-                                alt="user"
-                                className="w-4 h-4 object-cover"
-                                />
-        <div>
-          <div className="font-medium">Mover clase</div>
-          <div className="text-xs text-slate-500">Cambiar fecha, horario o instructor</div>
-        </div>
-      </button>
-    </div>
+      {puedeProgramarReemplazo(slot) ? (
+        <button
+          onClick={() => abrirModalReemplazarClase(slot)}
+          className="w-full text-left px-4 py-2.5 hover:bg-amber-50 flex items-center gap-2 text-sm"
+        >
+          <img
+            src="/calendar.png"
+            alt="reemplazo"
+            className="w-4 h-4 object-cover"
+          />
+          <div>
+            <div className="font-medium">Reemplazar</div>
+            <div className="text-xs text-slate-500">Programar reposicion por no asistencia</div>
+          </div>
+        </button>
+      ) : (
+        <>
+          <button
+            onClick={() => {
+              setReplaceSlot(slot);
+              setShowMoveMenu(null);
+            }}
+            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-sm"
+          >
+            <img
+              src="/user.png"
+              alt="user"
+              className="w-4 h-4 object-cover"
+            />
+            <div>
+              <div className="font-medium">Reemplazar alumno</div>
+              <div className="text-xs text-slate-500">Cambiar estudiante en este horario</div>
+            </div>
+          </button>
+
+          <div className="border-t border-slate-100"></div>
+
+          <button
+            onClick={() => abrirModalMoverClase(slot)}
+            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-2 text-sm"
+          >
+            <img
+              src="/calendar.png"
+              alt="mover"
+              className="w-4 h-4 object-cover"
+            />
+            <div>
+              <div className="font-medium">Mover clase</div>
+              <div className="text-xs text-slate-500">Cambiar fecha, horario o instructor</div>
+            </div>
+          </button>
+        </>
+      )}    </div>
   )}
 </div>
                         </div>
@@ -1110,7 +1211,7 @@ const extraerSoloFecha = (fechaString) => {
       
       <h2 className="font-black text-xl mb-2 flex items-center gap-2">
         <span className="material-icons-round text-indigo-600">calendar_today</span>
-        Mover Clase
+        {moveSlot.replacementMode ? 'Reemplazar clase' : 'Mover Clase'}
       </h2>
       
       {/* InformaciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n actual */}
@@ -1149,6 +1250,24 @@ const extraerSoloFecha = (fechaString) => {
         </div>
       </div>
       </div>
+
+      {moveSlot.replacementMode && (
+        <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-900">
+          <div className="font-semibold mb-1">Reposiciones del paquete</div>
+          {moveSlot.replacementSummary?.error ? (
+            <div>{moveSlot.replacementSummary.error}</div>
+          ) : moveSlot.replacementSummary ? (
+            <div>
+              Disponibles: <span className="font-bold">{moveSlot.replacementSummary.replacement_available_count}</span> de {moveSlot.replacementSummary.replacement_limit}. Usadas: {moveSlot.replacementSummary.replacement_required_count}.
+            </div>
+          ) : (
+            <div>Consultando disponibilidad de reposiciones...</div>
+          )}
+          <div className="text-xs mt-2 text-amber-700">
+            Este flujo solo aplica para clases pasadas marcadas como no asistio. Las clases futuras se mueven sin consumir reposicion.
+          </div>
+        </div>
+      )}
       
       {/* Formulario de movimiento */}
       <div className="space-y-6">
@@ -1349,12 +1468,12 @@ const extraerSoloFecha = (fechaString) => {
             {moviendoClase ? (
               <>
                 <span className="animate-spin">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³</span>
-                Moviendo...
+                {moveSlot.replacementMode ? 'Programando...' : 'Moviendo...'}
               </>
             ) : (
               <>
                 <span className="material-icons-round">swap_horiz</span>
-                Mover Clase
+                {moveSlot.replacementMode ? 'Programar reemplazo' : 'Mover Clase'}
               </>
             )}
           </button>
@@ -1655,6 +1774,39 @@ const extraerSoloFecha = (fechaString) => {
                     * El nombre es requerido para estudiantes de prueba
                   </p>
                 )}
+
+                <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-amber-700 font-bold">Apartado con liga</p>
+                      <p className="text-sm text-slate-600">La clase queda apartada por 24 horas y se genera liga de pago.</p>
+                    </div>
+                    <span className="material-icons-round text-amber-600">receipt_long</span>
+                  </div>
+
+                  {cargandoClaseSueltaQuote && (
+                    <p className="text-sm text-slate-500">Cargando precio desde Odoo...</p>
+                  )}
+
+                  {claseSueltaQuoteError && (
+                    <p className="text-sm text-red-600">{claseSueltaQuoteError}</p>
+                  )}
+
+                  {claseSueltaQuote && (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <span className="text-slate-500">Concepto</span>
+                        <span className="font-semibold text-right">Clase de prueba</span>
+                      </div>
+                      <div className="flex justify-between gap-3 items-center">
+                        <span className="text-slate-500">Total</span>
+                        <span className="font-black text-lg text-amber-700">
+                          ${Number(claseSueltaQuote.amount || 0).toFixed(2)} {claseSueltaQuote.currency || ''}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="mb-6">
@@ -1819,6 +1971,31 @@ const extraerSoloFecha = (fechaString) => {
                   reservaData.classType === 'C' ? 'Confirmar pago' : `Reservar ${reservaData.classType === 'P' ? 'Clase de Prueba' : 'Clase'}`
                 )}
               </button>
+              {['C', 'P'].includes(reservaData.classType) && (
+                <button
+                  onClick={reservarClaseConPagoPendiente}
+                  disabled={
+                    reservando ||
+                    creandoEstudiante ||
+                    (reservaData.classType === 'P' && !reservaData.nuevoEstudiante.nombre.trim()) ||
+                    (reservaData.classType !== 'P' && !reservaData.studentId) ||
+                    cargandoClaseSueltaQuote ||
+                    !claseSueltaQuote
+                  }
+                  className={`px-4 py-2 rounded-lg font-medium ${
+                    reservando ||
+                    creandoEstudiante ||
+                    (reservaData.classType === 'P' && !reservaData.nuevoEstudiante.nombre.trim()) ||
+                    (reservaData.classType !== 'P' && !reservaData.studentId) ||
+                    cargandoClaseSueltaQuote ||
+                    !claseSueltaQuote
+                      ? 'bg-amber-300 cursor-not-allowed'
+                      : 'bg-amber-600 hover:bg-amber-700 text-white'
+                  }`}
+                >
+                  Dejar pago pendiente 24h
+                </button>
+              )}
             </div>
           </div>
         </div>

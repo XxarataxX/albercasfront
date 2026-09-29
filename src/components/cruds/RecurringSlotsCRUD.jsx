@@ -16,7 +16,11 @@ export default function RecurringSlotsCRUD() {
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(true); // <-- Nuevo estado para mostrar/ocultar filtros
   const [selectedPackage, setSelectedPackage] = useState('');
+  const [monthlyPackages, setMonthlyPackages] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [initialQuote, setInitialQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteError, setQuoteError] = useState('');
 
    const [alert, setAlert] = useState({
   message: '',
@@ -64,11 +68,32 @@ export default function RecurringSlotsCRUD() {
     { value: 'F', label: 'Clase Fija' }
   ];
 
-  const monthlyPackages = [
-    { value: '1', label: '1 vez por semana', price: '$1,650', amount: 1650, sessions: '4 clases aprox.' },
-    { value: '2', label: '2 veces por semana', price: '$2,650', amount: 2650, sessions: '8 clases aprox.' },
-    { value: '3', label: '3 veces por semana', price: '$3,340', amount: 3340, sessions: '12 clases aprox.' }
+  const fallbackMonthlyPackages = [
+    { value: 'fallback-1', packageCode: '1', label: '1 clase por semana', price: '$1,650', amount: 1650, sessions: '4 clases aprox.', weeklyClasses: 1 },
+    { value: 'fallback-2', packageCode: '2', label: '2 clases por semana', price: '$2,650', amount: 2650, sessions: '8 clases aprox.', weeklyClasses: 2 },
+    { value: 'fallback-3', packageCode: '3', label: '3 clases por semana', price: '$3,340', amount: 3340, sessions: '12 clases aprox.', weeklyClasses: 3 }
   ];
+
+  const money = (value) => Number(value || 0).toLocaleString('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  });
+
+  const normalizePackage = (item) => {
+    const weeklyClasses = Number(item.weekly_classes || item.weeklyClasses || item.package_code || item.packageCode || 0);
+    const priceValue = Number(item.price ?? item.list_price ?? item.amount ?? 0);
+    return {
+      value: String(item.product_id || item.id || item.value),
+      productId: item.product_id || item.id || item.productId || null,
+      packageCode: String(item.package_code || item.packageCode || weeklyClasses || ''),
+      label: item.package_label || item.packageLabel || item.name || item.label,
+      price: priceValue > 0 ? money(priceValue) : (item.price_label || item.price || '$0.00'),
+      amount: priceValue,
+      sessions: item.sessions || `${weeklyClasses * 4 || 0} clases aprox.`,
+      weeklyClasses,
+      replacementLimit: Number(item.replacement_limit || item.replacementLimit || weeklyClasses || 0),
+    };
+  };
 
   const statusOptions = [
     { value: 'disponible', label: 'Disponible' },
@@ -133,12 +158,13 @@ export default function RecurringSlotsCRUD() {
         if (value) slotParams[key] = value;
       });
 
-      const [slotsRes, instructorsRes, studentsRes, timeBlocksRes, poolsRes] = await Promise.all([
+      const [slotsRes, instructorsRes, studentsRes, timeBlocksRes, poolsRes, packagesRes] = await Promise.all([
         recurringSlotService.getAll(slotParams),
         instructorService.getAll({ activo: true }),
         studentService.getAll({ activo: true, page: 1, pageSize: LOOKUP_PAGE_SIZE }),
         timeBlockService.getAll(),
-        poolService.getAll({ activo: true })
+        poolService.getAll({ activo: true }),
+        recurringSlotService.getMonthlyPackages({ search: 'Plan Mensual' }).catch(() => ({ data: { items: fallbackMonthlyPackages } }))
       ]);
 
       const slotList = extractList(slotsRes.data, 'slots');
@@ -154,6 +180,11 @@ export default function RecurringSlotsCRUD() {
       setStudents(studentList);
       setTimeBlocks(timeBlocksRes.data);
       setPools(poolsRes.data);
+      const packageList = extractList(packagesRes.data, 'items')
+        .map(normalizePackage)
+        .filter(option => option.weeklyClasses > 0)
+        .sort((a, b) => a.weeklyClasses - b.weeklyClasses);
+      setMonthlyPackages(packageList.length ? packageList : fallbackMonthlyPackages);
     } catch (error) {
       console.error('Error al cargar datos:', error);
       showAlert('Error al cargar datos: ' + (error.response?.data?.error || error.message));
@@ -199,6 +230,7 @@ export default function RecurringSlotsCRUD() {
   };
 
   const handleDayToggle = (dayValue) => {
+    const packageOption = monthlyPackages.find(option => option.value === selectedPackage);
     const currentDays = [...formData.daysOfWeek];
     if (currentDays.includes(dayValue)) {
       setFormData({
@@ -206,6 +238,10 @@ export default function RecurringSlotsCRUD() {
         daysOfWeek: currentDays.filter(d => d !== dayValue)
       });
     } else {
+      if (packageOption?.weeklyClasses && currentDays.length >= packageOption.weeklyClasses) {
+        showAlert(`Este paquete solo permite ${packageOption.weeklyClasses} dia(s) por semana.`);
+        return;
+      }
       setFormData({
         ...formData,
         daysOfWeek: [...currentDays, dayValue]
@@ -213,14 +249,30 @@ export default function RecurringSlotsCRUD() {
     }
   };
 
+  useEffect(() => {
+    let active = true;
+    setInitialQuote(null);
+    setQuoteError('');
+    const option = monthlyPackages.find(item => item.value === selectedPackage);
+    if (!showForm || !option?.productId || !formData.startDate || !formData.timeBlockId || formData.daysOfWeek.length !== option.weeklyClasses) {
+      setQuoteLoading(false);
+      return () => { active = false; };
+    }
+    setQuoteLoading(true);
+    recurringSlotService.quoteInitialMonth({
+      ...formData, productId: option.productId, packageCode: option.packageCode,
+    }).then(({ data }) => {
+      if (active) setInitialQuote(data);
+    }).catch(error => {
+      if (active) setQuoteError(error.response?.data?.detail || 'No se pudo calcular el primer mes en Odoo.');
+    }).finally(() => { if (active) setQuoteLoading(false); });
+    return () => { active = false; };
+  }, [showForm, selectedPackage, monthlyPackages, formData.startDate, formData.timeBlockId, formData.instructorId, formData.poolId, formData.daysOfWeek]);
+
   const getEndDate = () => {
-    if (!formData.startDate || !formData.duration) return null;
-    
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + parseInt(formData.duration));
-    
-    return endDate.toLocaleDateString('en-CA').split('T')[0];
+    if (!formData.startDate) return null;
+    const [year, month] = formData.startDate.split('-').map(Number);
+    return `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
   };
 
   const generatePatternDescription = () => {
@@ -230,42 +282,64 @@ export default function RecurringSlotsCRUD() {
       daysOfWeekOptions.find(d => d.value === day)?.short || day
     );
     
-    return `${selectedDays.join(', ')} por 30 dias`;
+    return `${selectedDays.join(', ')} hasta el ultimo dia del mes`;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const validatePackageScheduleForm = () => {
+    if (quoteLoading || !initialQuote?.can_contract) {
+      showAlert(quoteError || 'Completa los horarios y configura en Odoo el precio por clase del paquete antes de contratar.');
+      return null;
+    }
     const student = students.find(s => String(s.id) === String(formData.studentId));
     const period = student?.openPackagePeriod || student?.open_package_period;
     if (period || student?.hasOpenPackagePeriod || student?.has_open_package_period) {
       showAlert(`Este alumno ya tiene una mensualidad vigente o pendiente (${period?.invoice_name || 'factura pendiente'}). No puedes crear otro paquete.`);
-      return;
+      return null;
     }
     
     if (formData.daysOfWeek.length === 0) {
       showAlert('Por favor selecciona al menos un dia de la semana');
-      return;
+      return null;
     }
     if (!selectedPackage) {
       showAlert('Por favor selecciona un paquete mensual');
+      return null;
+    }
+
+    const endDate = getEndDate();
+    const packageOption = monthlyPackages.find(option => option.value === selectedPackage);
+    if (packageOption?.weeklyClasses && formData.daysOfWeek.length !== packageOption.weeklyClasses) {
+      showAlert(`Este paquete requiere exactamente ${packageOption.weeklyClasses} dia(s) por semana.`);
+      return null;
+    }
+    return {
+      ...formData,
+      billingMode: 'calendar_month',
+      endDate,
+      duration: parseInt(formData.duration),
+      classType: 'F',
+      packageCode: packageOption?.packageCode || selectedPackage,
+      productId: packageOption?.productId,
+      packageAmount: packageOption?.amount,
+      paymentMethod
+    };
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (paymentMethod === 'pending') {
+      await handleCreatePendingPayment();
       return;
     }
-    
+    await handleCreatePaidSchedule();
+  };
+
+  const handleCreatePaidSchedule = async () => {
+    const dataToSend = validatePackageScheduleForm();
+    if (!dataToSend) return;
+
     try {
       setFormLoading(true);
-      
-      const endDate = getEndDate();
-      const packageOption = monthlyPackages.find(option => option.value === selectedPackage);
-      const dataToSend = {
-        ...formData,
-        endDate,
-        duration: parseInt(formData.duration),
-        classType: 'F',
-        packageCode: selectedPackage,
-        packageAmount: packageOption?.amount,
-        paymentMethod
-      };
       
       const response = await recurringSlotService.createRecurring(dataToSend);
       
@@ -281,6 +355,39 @@ export default function RecurringSlotsCRUD() {
     } catch (error) {
       console.error('Error al crear slots recurrentes:', error);
       showAlert('Error al crear los slots: ' + (error.response?.data?.detail || error.response?.data?.error || error.message));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleCreatePendingPayment = async () => {
+    const dataToSend = validatePackageScheduleForm();
+    if (!dataToSend) return;
+
+    try {
+      setFormLoading(true);
+
+      const response = await recurringSlotService.createPackageHold({
+        ...dataToSend,
+        paymentMethod: 'pending',
+        autoGenerateLink: true,
+        holdHours: 24
+      });
+
+      fetchData(pagination.page);
+      const hold = response.data?.hold || response.data?.packageHold;
+      const invoiceName = response.data?.invoice_name || hold?.invoice_name || 'factura pendiente';
+      const paymentUrl = response.data?.payment_url || hold?.payment_url;
+      showAlert(
+        paymentUrl
+          ? `Pago pendiente generado: ${invoiceName}. Liga de pago: ${paymentUrl}`
+          : `Pago pendiente generado: ${invoiceName}. El horario queda apartado por 24 horas.`,
+        'success'
+      );
+      resetForm();
+    } catch (error) {
+      console.error('Error al generar pago pendiente:', error);
+      showAlert('Error al generar pago pendiente: ' + (error.response?.data?.detail || error.response?.data?.error || error.message));
     } finally {
       setFormLoading(false);
     }
@@ -636,16 +743,28 @@ export default function RecurringSlotsCRUD() {
                   >
                     <div className="font-semibold">{option.label}</div>
                     <div className="text-2xl font-bold mt-2">{option.price}</div>
-                    <div className="text-xs text-gray-500 mt-1">{option.sessions}</div>
+                    <div className="text-xs text-gray-500 mt-1">Precio del paquete mensual completo</div>
                   </button>
                 ))}
+              </div>
+
+              <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm" role="status">
+                {quoteLoading ? 'Calculando primer mes en Odoo...' : quoteError || (initialQuote ? (
+                  <>
+                    <div className="font-semibold">{initialQuote.initial_pricing_mode === 'full_month' ? `Mes completo: ${initialQuote.class_count} clases programadas` : `Primer mes: ${initialQuote.class_count} clases restantes`}</div>
+                    <div>{Object.entries(initialQuote.classes_by_day).map(([day, count]) => `${daysOfWeekOptions.find(item => item.value === day)?.label}: ${count}`).join(' · ')}</div>
+                    <div className="mt-2">Primera factura: {initialQuote.initial_amount == null ? 'Precio por clase pendiente de configurar en Odoo' : money(initialQuote.initial_amount)}</div>
+                    {initialQuote.initial_pricing_mode === 'full_month' && <div>Inicio el dia 1: se cobra el paquete mensual completo.</div>}
+                    <div>Desde {initialQuote.next_billing_date}: {money(initialQuote.monthly_amount)} por mes.</div>
+                  </>
+                ) : 'Selecciona paquete, dias, fecha de inicio y horario para calcular las clases restantes del mes.')}
               </div>
 
               <div className="mt-4 border-t border-blue-100 pt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Pago del primer periodo *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('cash')}
@@ -668,9 +787,20 @@ export default function RecurringSlotsCRUD() {
                   >
                     Tarjeta
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('pending')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+                      paymentMethod === 'pending'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-200'
+                    }`}
+                  >
+                    Dejar pago pendiente
+                  </button>
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
-                  El horario se crea solo si la factura del primer periodo queda pagada.
+                  Efectivo/Tarjeta crea las clases porque el pago ya se confirmo en recepcion. Pendiente genera factura y liga de pago por 24 horas; las clases se crean cuando se pague.
                 </p>
               </div>
             </section>
@@ -750,7 +880,7 @@ export default function RecurringSlotsCRUD() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="bg-emerald-50 border border-emerald-100 rounded-lg px-4 py-3">
                   <div className="text-xs uppercase tracking-wide text-emerald-700 font-semibold">Vigencia</div>
-                  <div className="mt-1 text-sm font-medium text-gray-900">30 dias desde la fecha de inicio</div>
+                  <div className="mt-1 text-sm font-medium text-gray-900">Hasta el ultimo dia del mes. Renovacion el dia 1.</div>
                 </div>
 
                 <div className="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
@@ -815,7 +945,7 @@ export default function RecurringSlotsCRUD() {
                 <div>
                   <span className="font-medium">Cobro inicial:</span>{' '}
                   {selectedPackage
-                    ? `${monthlyPackages.find(option => option.value === selectedPackage)?.price} - ${paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta'}`
+                    ? `${monthlyPackages.find(option => option.value === selectedPackage)?.price} - ${paymentMethod === 'pending' ? 'pendiente con liga 24h' : `pago inmediato (${paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta'})`}`
                     : 'Pendiente'}
                 </div>
                 <div>
@@ -863,8 +993,8 @@ export default function RecurringSlotsCRUD() {
                   </>
                 ) : (
                   <>
-                    <span className="material-icons-round">add_circle</span>
-                    Registrar clases
+                    <span className="material-icons-round">{paymentMethod === 'pending' ? 'receipt_long' : 'add_circle'}</span>
+                    {paymentMethod === 'pending' ? 'Generar pago pendiente' : 'Confirmar pago y crear clases'}
                   </>
                 )}
               </button>

@@ -24,6 +24,7 @@ if (branchArg) {
 
 process.env.PORT = process.env.PORT || '3001';
 process.env.HOST = process.env.HOST || '0.0.0.0';
+process.env.DISABLE_ESLINT_PLUGIN = process.env.DISABLE_ESLINT_PLUGIN || 'true';
 
 if (branchScope) {
   process.env.REACT_APP_BRANCH_SCOPE = branchScope;

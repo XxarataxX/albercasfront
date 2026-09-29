@@ -1,8 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import { studentService, extractList, extractPagination } from '../../services/api';
+import {
+  studentService,
+  instructorService,
+  timeBlockService,
+  extractList,
+  extractPagination
+} from '../../services/api';
 
 
 const STUDENTS_PAGE_SIZE = 20;
+const DAY_OPTIONS = [
+  { value: 'L', label: 'Lunes' },
+  { value: 'M', label: 'Martes' },
+  { value: 'MI', label: 'Miercoles' },
+  { value: 'J', label: 'Jueves' },
+  { value: 'V', label: 'Viernes' },
+  { value: 'S', label: 'Sabado' },
+  { value: 'D', label: 'Domingo' },
+];
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export default function StudentsCRUD() {
   const [confirmModal, setConfirmModal] = useState({ 
@@ -29,6 +46,26 @@ export default function StudentsCRUD() {
   });
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [scheduleModal, setScheduleModal] = useState({
+    show: false,
+    student: null,
+    programs: [],
+    instructors: [],
+    timeBlocks: [],
+    loading: false,
+    saving: false,
+    alert: {
+      message: '',
+      type: 'info',
+    },
+    form: {
+      programId: '',
+      instructorId: '',
+      timeBlockId: '',
+      daysOfWeek: [],
+      effectiveDate: todayIso(),
+    },
+  });
 
   useEffect(() => {
     fetchStudents(1);
@@ -88,6 +125,7 @@ export default function StudentsCRUD() {
     renewal_pending: 'Renovacion pendiente',
     overdue_first_surcharge: '1er recargo',
     overdue_second_surcharge: '2do recargo',
+    cancellation_pending: 'Baja pendiente',
     cancelled: 'Cancelado'
   };
 
@@ -97,10 +135,39 @@ export default function StudentsCRUD() {
     renewal_pending: 'bg-blue-100 text-blue-800',
     overdue_first_surcharge: 'bg-orange-100 text-orange-800',
     overdue_second_surcharge: 'bg-red-100 text-red-800',
+    cancellation_pending: 'bg-red-600 text-white',
     cancelled: 'bg-gray-100 text-gray-700'
   };
 
   const getOpenPackagePeriod = (student) => student.openPackagePeriod || student.open_package_period || null;
+  const isCancellationPending = (student) => getOpenPackagePeriod(student)?.state === 'cancellation_pending';
+
+  const getProgramDays = (program) => {
+    const raw = program?.daysOfWeek || program?.days_of_week || '';
+    return Array.isArray(raw) ? raw : raw.split(',').filter(Boolean);
+  };
+
+  const getPackageDayLimit = () => {
+    const period = getOpenPackagePeriod(scheduleModal.student || {});
+    const packageCode = period?.package_code || period?.packageCode;
+    const numericLimit = Number(packageCode);
+    return Number.isFinite(numericLimit) && numericLimit > 0 ? numericLimit : null;
+  };
+
+  const showScheduleAlert = (message, type = 'error') => {
+    setScheduleModal((prev) => ({
+      ...prev,
+      alert: { message, type },
+    }));
+  };
+
+  const programLabel = (program) => {
+    if (!program) return 'Sin programa fijo';
+    const instructor = program.instructorName || program.instructor_name || 'Sin instructor';
+    const time = program.timeBlockName || program.time_block_name || 'Sin horario';
+    const days = getProgramDays(program).join(', ') || 'Sin dias';
+    return `${days} · ${time} · ${instructor}`;
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Ãƒâ€šÃ‚Â¿EstÃƒÆ’Ã‚Â¡ seguro de eliminar este estudiante?')) return;
@@ -174,6 +241,149 @@ const handleConfirmAction = async () => {
     });
     setEditingId(student.id);
     setShowForm(true);
+  };
+
+  const handleOpenSchedule = async (student) => {
+    setScheduleModal((prev) => ({
+      ...prev,
+      show: true,
+      student,
+      loading: true,
+      saving: false,
+      alert: { message: '', type: 'info' },
+      programs: [],
+      instructors: [],
+      timeBlocks: [],
+      form: {
+        programId: '',
+        instructorId: '',
+        timeBlockId: '',
+        daysOfWeek: [],
+        effectiveDate: todayIso(),
+      },
+    }));
+
+    try {
+      const [programsRes, instructorsRes, timeBlocksRes] = await Promise.all([
+        studentService.getPrograms(student.id, { active: true }),
+        instructorService.getAll({ active: true, pageSize: 200 }),
+        timeBlockService.getAll(),
+      ]);
+      const programs = extractList(programsRes.data, 'programs').filter((program) => (
+        (program.classType || program.class_type || 'F') === 'F'
+      ));
+      const instructors = extractList(instructorsRes.data, 'instructors');
+      const timeBlocks = extractList(timeBlocksRes.data, 'time_blocks');
+      const currentProgram = programs[0] || null;
+      const period = getOpenPackagePeriod(student);
+      setScheduleModal((prev) => ({
+        ...prev,
+        programs,
+        instructors,
+        timeBlocks,
+        loading: false,
+        form: {
+          programId: currentProgram?.id ? String(currentProgram.id) : '',
+          instructorId: currentProgram?.instructorId || currentProgram?.instructor_id
+            ? String(currentProgram.instructorId || currentProgram.instructor_id)
+            : '',
+          timeBlockId: currentProgram?.timeBlockId || currentProgram?.time_block_id
+            ? String(currentProgram.timeBlockId || currentProgram.time_block_id)
+            : '',
+          daysOfWeek: getProgramDays(currentProgram),
+          effectiveDate: period?.start_date && todayIso() < period.start_date ? period.start_date : todayIso(),
+        },
+      }));
+    } catch (error) {
+      console.error('Error al cargar horario fijo:', error);
+      setScheduleModal((prev) => ({ ...prev, loading: false }));
+      showScheduleAlert('Error al cargar el horario fijo: ' + (error.response?.data?.detail || error.response?.data?.error || error.message), 'error');
+    }
+  };
+
+  const closeScheduleModal = () => {
+    setScheduleModal((prev) => ({ ...prev, show: false, student: null }));
+  };
+
+  const updateScheduleForm = (field, value) => {
+    setScheduleModal((prev) => ({
+      ...prev,
+      alert: { message: '', type: 'info' },
+      form: {
+        ...prev.form,
+        [field]: value,
+      },
+    }));
+  };
+
+  const toggleScheduleDay = (day) => {
+    setScheduleModal((prev) => {
+      const current = prev.form.daysOfWeek || [];
+      const period = getOpenPackagePeriod(prev.student || {});
+      const numericLimit = Number(period?.package_code || period?.packageCode);
+      const next = current.includes(day)
+        ? current.filter((item) => item !== day)
+        : [...current, day];
+      if (!current.includes(day) && Number.isFinite(numericLimit) && numericLimit > 0 && current.length >= numericLimit) {
+        return {
+          ...prev,
+          alert: {
+            message: `Este paquete solo permite ${numericLimit} dia(s) por semana. Quita el dia actual antes de elegir otro.`,
+            type: 'error',
+          },
+        };
+      }
+      return {
+        ...prev,
+        alert: { message: '', type: 'info' },
+        form: {
+          ...prev.form,
+          daysOfWeek: next,
+        },
+      };
+    });
+  };
+
+  const handleSubmitScheduleChange = async (event) => {
+    event.preventDefault();
+    if (!scheduleModal.student) return;
+    if (!scheduleModal.form.instructorId || !scheduleModal.form.timeBlockId || !scheduleModal.form.daysOfWeek.length) {
+      showScheduleAlert('Selecciona instructor, horario y al menos un dia.', 'error');
+      return;
+    }
+    const packageDayLimit = getPackageDayLimit();
+    if (packageDayLimit && scheduleModal.form.daysOfWeek.length !== packageDayLimit) {
+      showScheduleAlert(`Este paquete requiere exactamente ${packageDayLimit} dia(s) por semana.`, 'error');
+      return;
+    }
+
+    try {
+      setScheduleModal((prev) => ({ ...prev, saving: true }));
+      const response = await studentService.changeFixedSchedule(scheduleModal.student.id, {
+        programId: scheduleModal.form.programId ? Number(scheduleModal.form.programId) : undefined,
+        instructorId: Number(scheduleModal.form.instructorId),
+        timeBlockId: Number(scheduleModal.form.timeBlockId),
+        daysOfWeek: scheduleModal.form.daysOfWeek,
+        effectiveDate: scheduleModal.form.effectiveDate,
+      });
+      const counts = response.data?.counts || {};
+      showAlert(
+        `Horario actualizado: ${counts.moved || 0} movidas, ${counts.created || 0} creadas y ${counts.cancelled || 0} liberadas.`,
+        'success'
+      );
+      closeScheduleModal();
+      fetchStudents(pagination.page);
+    } catch (error) {
+      console.error('Error al cambiar horario fijo:', error);
+      setScheduleModal((prev) => ({
+        ...prev,
+        saving: false,
+        alert: {
+          message: 'Error al cambiar horario: ' + (error.response?.data?.detail || error.response?.data?.error || error.message),
+          type: 'error',
+        },
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -420,8 +630,17 @@ const handleConfirmAction = async () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {students.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
+                {students.map((student) => {
+                  const cancellationPending = isCancellationPending(student);
+                  return (
+                  <tr
+                    key={student.id}
+                    className={
+                      cancellationPending
+                        ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500'
+                        : 'hover:bg-gray-50'
+                    }
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold mr-3">
@@ -485,12 +704,21 @@ const handleConfirmAction = async () => {
                         <button
                           onClick={() => handleEdit(student)}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                          title="Editar datos"
                         >
                           <span className="material-icons text-lg">edit</span>
                         </button>
                         <button
+                          onClick={() => handleOpenSchedule(student)}
+                          className="text-cyan-700 hover:text-cyan-900 p-1 rounded hover:bg-cyan-50"
+                          title="Ver o editar horario fijo"
+                        >
+                          <span className="material-icons text-lg">event_repeat</span>
+                        </button>
+                        <button
                           onClick={() => handleDelete(student.id)}
                           className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                          title="Eliminar"
                         >
                           <span className="material-icons text-lg">delete</span>
                         </button>
@@ -500,8 +728,12 @@ const handleConfirmAction = async () => {
       /* SI ESTÃƒÆ’Ã‚Â ACTIVO: Mostrar botÃƒÆ’Ã‚Â³n para DAR DE BAJA */
       <button
         onClick={() => handleBajaTotal(student)}
-        className="text-orange-600 hover:text-orange-900"
-        title="Dar de baja y liberar clases"
+        className={
+          cancellationPending
+            ? 'text-red-700 hover:text-red-950 p-1 rounded hover:bg-red-100'
+            : 'text-orange-600 hover:text-orange-900 p-1 rounded hover:bg-orange-50'
+        }
+        title={cancellationPending ? 'Dar baja manual por adeudo vencido' : 'Dar de baja y liberar clases'}
       >
         <span className="material-icons text-lg">person_off</span>
       </button>
@@ -519,7 +751,8 @@ const handleConfirmAction = async () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -559,6 +792,206 @@ const handleConfirmAction = async () => {
         </>
       )}
       {/* MODAL DE CONFIRMACIÃƒÆ’Ã¢â‚¬Å“N PERSONALIZADO */}
+{scheduleModal.show && (
+  <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full mx-4 border border-gray-100 overflow-hidden">
+      <div className="p-5 border-b bg-gradient-to-r from-cyan-50 to-emerald-50 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Horario fijo</p>
+          <h3 className="text-xl font-bold text-gray-900">
+            {scheduleModal.student?.nombre || 'Alumno'}
+          </h3>
+          <p className="text-sm text-gray-600">
+            Mueve las clases pendientes del periodo pagado y actualiza el horario para renovaciones.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={closeScheduleModal}
+          className="rounded-full p-2 text-gray-500 hover:bg-white hover:text-gray-800"
+          aria-label="Cerrar horario"
+        >
+          <span className="material-icons">close</span>
+        </button>
+      </div>
+
+      {scheduleModal.loading ? (
+        <div className="p-8 text-center">
+          <span className="material-icons animate-spin text-4xl text-cyan-600">refresh</span>
+          <p className="mt-2 text-gray-600">Cargando horario actual...</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmitScheduleChange} className="p-5 space-y-5">
+          {scheduleModal.alert.message && (
+            <div
+              className={`rounded-lg border px-4 py-3 text-sm ${
+                scheduleModal.alert.type === 'success'
+                  ? 'bg-green-50 border-green-200 text-green-800'
+                  : scheduleModal.alert.type === 'error'
+                    ? 'bg-red-50 border-red-200 text-red-800'
+                    : 'bg-blue-50 border-blue-200 text-blue-800'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <span className="material-icons text-base mt-0.5">
+                  {scheduleModal.alert.type === 'error' ? 'error_outline' : 'info'}
+                </span>
+                <span>{scheduleModal.alert.message}</span>
+              </div>
+            </div>
+          )}
+
+          <section className="rounded-xl border bg-slate-50 p-4">
+            <div className="flex items-center gap-2 text-cyan-800 mb-3">
+              <span className="material-icons">visibility</span>
+              <h4 className="font-semibold text-gray-900">Horario actual</h4>
+            </div>
+            {scheduleModal.programs.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {scheduleModal.programs.map((program) => (
+                  <button
+                    type="button"
+                    key={program.id}
+                    onClick={() => setScheduleModal((prev) => ({
+                      ...prev,
+                      form: {
+                        ...prev.form,
+                        programId: String(program.id),
+                        instructorId: String(program.instructorId || program.instructor_id || ''),
+                        timeBlockId: String(program.timeBlockId || program.time_block_id || ''),
+                        daysOfWeek: getProgramDays(program),
+                      },
+                    }))}
+                    className={`text-left rounded-lg border p-3 transition ${
+                      String(scheduleModal.form.programId) === String(program.id)
+                        ? 'border-cyan-500 bg-cyan-50'
+                        : 'border-gray-200 bg-white hover:border-cyan-200'
+                    }`}
+                  >
+                    <div className="font-semibold text-gray-900">{programLabel(program)}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Vigencia {program.startDate || program.start_date} a {program.endDate || program.end_date}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+                No encontre programa fijo activo. El cambio solo puede hacerse si el alumno tiene paquete activo ligado a horario fijo.
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-xl border bg-white p-4">
+            <div className="flex items-center gap-2 text-emerald-800 mb-4">
+              <span className="material-icons">edit_calendar</span>
+              <h4 className="font-semibold text-gray-900">Nuevo horario</h4>
+            </div>
+            {getOpenPackagePeriod(scheduleModal.student || {}) && (
+              <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                Paquete: {getOpenPackagePeriod(scheduleModal.student || {}).package_label || 'Mensualidad'} ·
+                Periodo: {getOpenPackagePeriod(scheduleModal.student || {}).start_date} a {getOpenPackagePeriod(scheduleModal.student || {}).end_date} ·
+                Dias permitidos: {getPackageDayLimit() || 'segun paquete'}
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+                <select
+                  value={scheduleModal.form.instructorId}
+                  onChange={(event) => updateScheduleForm('instructorId', event.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  required
+                >
+                  <option value="">Seleccionar instructor</option>
+                  {scheduleModal.instructors.map((instructor) => (
+                    <option key={instructor.id} value={instructor.id}>
+                      {instructor.nombre || instructor.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Horario</label>
+                <select
+                  value={scheduleModal.form.timeBlockId}
+                  onChange={(event) => updateScheduleForm('timeBlockId', event.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  required
+                >
+                  <option value="">Seleccionar horario</option>
+                  {scheduleModal.timeBlocks.map((timeBlock) => (
+                    <option key={timeBlock.id} value={timeBlock.id}>
+                      {timeBlock.nombre || timeBlock.name || `${timeBlock.hour_start || timeBlock.hourStart} - ${timeBlock.hour_end || timeBlock.hourEnd}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+                <input
+                  type="date"
+                  value={scheduleModal.form.effectiveDate}
+                  onChange={(event) => updateScheduleForm('effectiveDate', event.target.value)}
+                  min={getOpenPackagePeriod(scheduleModal.student || {})?.start_date || undefined}
+                  max={getOpenPackagePeriod(scheduleModal.student || {})?.end_date || undefined}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Dias de clase</label>
+              <div className="flex flex-wrap gap-2">
+                {DAY_OPTIONS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleScheduleDay(day.value)}
+                    className={`px-3 py-2 rounded-lg border text-sm font-medium ${
+                      scheduleModal.form.daysOfWeek.includes(day.value)
+                        ? 'bg-cyan-700 border-cyan-700 text-white'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-cyan-300'
+                    }`}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+            Al guardar, se moveran solo las clases fijas futuras del mes/periodo vigente. Las clases ya tomadas no se tocan.
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeScheduleModal}
+              className="bg-white border hover:bg-gray-50 text-gray-800 px-5 py-2 rounded-lg"
+              disabled={scheduleModal.saving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="bg-cyan-700 hover:bg-cyan-800 text-white px-5 py-2 rounded-lg flex items-center justify-center gap-2 font-medium shadow-sm disabled:opacity-60"
+              disabled={scheduleModal.saving || scheduleModal.loading || !scheduleModal.programs.length}
+            >
+              <span className="material-icons">{scheduleModal.saving ? 'hourglass_top' : 'published_with_changes'}</span>
+              {scheduleModal.saving ? 'Moviendo clases...' : 'Guardar nuevo horario'}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  </div>
+)}
+
 {confirmModal.show && (
   <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm">
     <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-100">

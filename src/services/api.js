@@ -6,6 +6,7 @@ import { withBranchParams, withBranchPayload } from '../branchScope';
 export const extractList = (payload, key) => {
   if (Array.isArray(payload)) return payload;
   if (payload && Array.isArray(payload[key])) return payload[key];
+  if (payload && Array.isArray(payload.value)) return payload.value;
   return [];
 };
 
@@ -39,7 +40,11 @@ api.interceptors.response.use(
 );
 
 export const recurringSlotService = {
+  quoteInitialMonth: (data) => api.post('/package-quotes/initial', withBranchPayload(data)),
   createRecurring: (data) => api.post('/slots/recurring', withBranchPayload(data)),
+  createPackageHold: (data) => api.post('/package-holds', withBranchPayload(data)),
+  markPackageHoldPaid: (id, data = {}) => api.post(`/package-holds/${id}/mark-paid`, withBranchPayload(data)),
+  getMonthlyPackages: (params = {}) => api.get('/products/monthly-packages', { params: withBranchParams(params) }),
   getAll: (params = {}) => api.get('/slots', { params: withBranchParams(params) }),
   getById: (id) => api.get(`/slots/${id}`),
   create: (data) => api.post('/slots', withBranchPayload(data)),
@@ -68,6 +73,8 @@ export const instructorService = {
 export const studentService = {
   getAll: (params = {}) => api.get('/students', { params: withBranchParams(params) }),
   getById: (id) => api.get(`/students/${id}`),
+  getPrograms: (id, params = {}) => api.get(`/students/${id}/programs`, { params: withBranchParams(params) }),
+  changeFixedSchedule: (id, data) => api.post(`/students/${id}/fixed-schedule/change`, withBranchPayload(data)),
   create: (data) => api.post('/students', withBranchPayload(data)),
   update: (id, data) => api.put(`/students/${id}`, withBranchPayload(data)),
   delete: (id) => api.delete(`/students/${id}`),
@@ -92,4 +99,3 @@ export const slotService = {
 };
 
 export default api;
-
